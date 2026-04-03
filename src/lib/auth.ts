@@ -10,10 +10,16 @@ const dbAdapter = process.env.POSTGRES_URL
     }) 
   : new Database("./auth.db");
 
+const getBaseURL = () => {
+  if (process.env.BETTER_AUTH_URL) return process.env.BETTER_AUTH_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+};
+
 export const auth = betterAuth({
   database: dbAdapter,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: getBaseURL(),
   trustedOrigins: [
     "https://dash.better-auth.com", 
     "http://localhost:3000", 

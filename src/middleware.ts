@@ -14,9 +14,11 @@ const protectedPrefixes = [
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Better Auth stores session in this cookie
-  const sessionToken =
-    request.cookies.get("better-auth.session_token")?.value;
+  // Better Auth stores session in this cookie. 
+  // In production it might be __Secure-better-auth.session_token
+  const sessionToken = 
+    request.cookies.get("better-auth.session_token")?.value ||
+    request.cookies.get("__Secure-better-auth.session_token")?.value;
 
   const isSignIn = signInPages.some((p) => pathname === p || pathname.startsWith(p + "/"));
   const isProtected = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p));
