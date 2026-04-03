@@ -10,7 +10,7 @@ import { Card, Button, Chip, Spinner, Input } from "@heroui/react";
 export default function PatientPortal() {
   const { data: session } = authClient.useSession();
   const betterAuthId = session?.user?.id;
-  const profile = useQuery(api.patients.getMyProfile);
+  const profile = useQuery(api.patients.getMyProfile, betterAuthId ? { betterAuthId } : "skip");
   const updateProfile = useMutation(api.patients.updateContactInfo);
   const seedData = useMutation(api.patients.seedDemoPatient);
   
@@ -23,8 +23,9 @@ export default function PatientPortal() {
   };
 
   const handleSave = async () => {
+    if (!betterAuthId) return;
     try {
-      await updateProfile({ phone });
+      await updateProfile({ betterAuthId, phone });
       setIsEditing(false);
       alert("Contact information updated successfully.");
     } catch(e) {
@@ -70,7 +71,7 @@ export default function PatientPortal() {
               <Button 
                 variant="secondary" 
                 className="w-full font-bold"
-                onPress={() => void seedData().then(() => window.location.reload())}
+                onPress={() => betterAuthId && void seedData({ betterAuthId }).then(() => window.location.reload())}
               >
                 Generate Demo Data
               </Button>

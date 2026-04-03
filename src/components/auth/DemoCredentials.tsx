@@ -45,7 +45,7 @@ export function DemoCredentials({ onSelect }: { onSelect: (email: string, passwo
           <div
             key={account.role}
             className="group relative flex items-center gap-4 p-3.5 rounded-2xl bg-white border border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 cursor-pointer overflow-hidden"
-            onClick={() => onSelect(account.email, "password123")}
+            onClick={() => onSelect(account.email, "Password123!")}
           >
             {/* Hover Backdrop */}
             <div className="absolute inset-0 bg-linear-to-r from-blue-50/0 via-blue-50/0 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -94,7 +94,7 @@ export function DemoCredentials({ onSelect }: { onSelect: (email: string, passwo
       </div>
       
       <p className="mt-6 text-center text-[10px] font-medium text-slate-400 italic">
-        All demo accounts use <span className="text-slate-600 font-bold">password123</span>
+        All demo accounts use <span className="text-slate-600 font-bold">Password123!</span>
       </p>
     </div>
   );

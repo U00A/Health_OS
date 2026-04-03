@@ -10,7 +10,8 @@
 
 import type * as adminUsers from "../adminUsers.js";
 import type * as admissions from "../admissions.js";
-import type * as auth from "../auth.js";
+import type * as authSeeds from "../authSeeds.js";
+import type * as authSync from "../authSync.js";
 import type * as beds from "../beds.js";
 import type * as caseEntries from "../caseEntries.js";
 import type * as compteRendus from "../compteRendus.js";
@@ -25,6 +26,7 @@ import type * as labResults from "../labResults.js";
 import type * as patients from "../patients.js";
 import type * as prescriptions from "../prescriptions.js";
 import type * as security from "../security.js";
+import type * as seed from "../seed.js";
 import type * as sessions from "../sessions.js";
 import type * as specialities from "../specialities.js";
 import type * as users from "../users.js";
@@ -39,7 +41,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   adminUsers: typeof adminUsers;
   admissions: typeof admissions;
-  auth: typeof auth;
+  authSeeds: typeof authSeeds;
+  authSync: typeof authSync;
   beds: typeof beds;
   caseEntries: typeof caseEntries;
   compteRendus: typeof compteRendus;
@@ -54,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   patients: typeof patients;
   prescriptions: typeof prescriptions;
   security: typeof security;
+  seed: typeof seed;
   sessions: typeof sessions;
   specialities: typeof specialities;
   users: typeof users;

@@ -6,8 +6,10 @@ import { api } from "../../../convex/_generated/api";
 import { Pill, CheckCircle, Search, ShieldCheck } from "lucide-react";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
 import { Id, Doc } from "../../../convex/_generated/dataModel";
+import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 
 export default function PharmacyInterface() {
+  const betterAuthId = useBetterAuthId();
   const [patientId, setPatientId] = useState("");
   // Conditionally execute query if we have a plausible ID
   const prescriptions = useQuery(api.prescriptions.listByPatient, 
@@ -17,8 +19,9 @@ export default function PharmacyInterface() {
   const dispenseMutation = useMutation(api.dispenseRecords.dispense);
 
   const handleDispense = async (pid: Id<"prescriptions">) => {
+    if (!betterAuthId) return;
     try {
-      await dispenseMutation({ prescription_id: pid, notes: "Verified and dispensed securely via POS terminal." });
+      await dispenseMutation({ betterAuthId, prescription_id: pid, notes: "Verified and dispensed securely via POS terminal." });
       alert("Verification successful. Dispense record immutably locked.");
     } catch(e: any) {
       alert("Transaction verification failed: " + e.message);
