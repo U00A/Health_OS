@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { authClient } from "@/lib/auth-client";
 import { LogOut, Menu, X, Activity } from "lucide-react";
 import Link from "next/link";
+import { BackButton, GlobalNavigationHeader, MobileBottomNavigation } from "@/components/navigation";
+import { useNavigation, useSectionInfo } from "@/hooks/useNavigation";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -11,6 +13,8 @@ interface DashboardShellProps {
   roleColor?: string; // Tailwind class e.g. "bg-blue-600"
   sidebarContent?: React.ReactNode;
   headerContent?: React.ReactNode;
+  // New navigation props
+  useGlobalNav?: boolean; // Use GlobalNavigationHeader + MobileBottomNav instead of sidebar
 }
 
 export function DashboardShell({
@@ -19,14 +23,78 @@ export function DashboardShell({
   roleColor = "bg-blue-600",
   sidebarContent,
   headerContent,
+  useGlobalNav = false,
 }: DashboardShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { breadcrumbs } = useSectionInfo();
+  const [announcement, setAnnouncement] = useState<string | null>(null);
 
-  const handleSignOut = async () => {
+  // Announce navigation for screen readers
+  const announce = useCallback((message: string) => {
+    setAnnouncement(message);
+    setTimeout(() => setAnnouncement(null), 1000);
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
     await authClient.signOut();
     window.location.href = "/login";
-  };
+  }, []);
 
+  // New global navigation mode
+  if (useGlobalNav) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <GlobalNavigationHeader
+          roleColor={roleColor}
+          className="flex-shrink-0"
+        />
+        
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl">
+            {/* Page-level back button and title */}
+            <div className="mb-6 flex items-center gap-3">
+              <BackButton size="md" />
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{roleTitle}</h1>
+                <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 mt-1">
+                  {breadcrumbs.map((crumb, index) => {
+                    const isLast = index === breadcrumbs.length - 1;
+                    return (
+                      <span key={crumb.href} className="flex items-center gap-1">
+                        {index > 0 && <span className="text-slate-300">/</span>}
+                        <Link
+                          href={crumb.href}
+                          className={`text-sm font-medium transition-colors ${isLast ? "text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                          aria-current={isLast ? "page" : undefined}
+                        >
+                          {crumb.label}
+                        </Link>
+                      </span>
+                    );
+                  })}
+                </nav>
+              </div>
+            </div>
+            
+            {children}
+          </div>
+        </main>
+
+        {/* Mobile bottom navigation */}
+        <MobileBottomNavigation
+          announcementMessage={announcement}
+        />
+
+        {/* Screen reader live region */}
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcement}
+        </div>
+      </div>
+    );
+  }
+
+  // Classic sidebar mode (backward compatible)
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
       {/* Mobile Sidebar Overlay */}
@@ -34,6 +102,9 @@ export function DashboardShell({
         <div 
           className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation sidebar"
         />
       )}
 
@@ -43,7 +114,7 @@ export function DashboardShell({
       } flex flex-col`}>
         {/* Sidebar Header */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 shrink-0">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group" onClick={() => setSidebarOpen(false)}>
             <div className={`w-8 h-8 ${roleColor} rounded-lg flex items-center justify-center shadow-md`}>
               <Activity className="w-4 h-4 text-white" />
             </div>
@@ -52,6 +123,7 @@ export function DashboardShell({
           <button 
             className="ml-auto p-2 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
           >
             <X className="w-5 h-5" />
           </button>
@@ -66,7 +138,7 @@ export function DashboardShell({
         </div>
 
         {/* Custom Sidebar Content (e.g. Nav Links, Patient List) */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex-1 overflow-y-auto px-4 pb-4" role="navigation" aria-label="Sidebar navigation">
            {sidebarContent}
         </div>
 
@@ -89,9 +161,13 @@ export function DashboardShell({
           <button
             className="p-2 mr-4 rounded-lg hover:bg-slate-100 text-slate-500 lg:hidden"
             onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
+
+          {/* Back button for sidebar pages */}
+          <BackButton size="sm" className="mr-3" />
           
           <div className="flex-1 flex items-center h-full">
             {headerContent || <div className="text-sm font-semibold text-slate-400">Ready</div>}
@@ -104,6 +180,9 @@ export function DashboardShell({
              {children}
           </div>
         </main>
+
+        {/* Mobile bottom navigation for sidebar mode */}
+        <MobileBottomNavigation announcementMessage={announcement} />
       </div>
     </div>
   );

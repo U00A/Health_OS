@@ -6,6 +6,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <DashboardShell
       roleTitle="Admin Console"
       roleColor="bg-slate-900"
+      useGlobalNav
       sidebarContent={
         <nav className="space-y-1">
           <SidebarItem 

@@ -6,6 +6,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     <DashboardShell
       roleTitle="Ward Operations"
       roleColor="bg-sky-500"
+      useGlobalNav
       sidebarContent={
         <nav className="space-y-1">
           <SidebarItem 

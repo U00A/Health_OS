@@ -6,6 +6,7 @@ export default function PharmacyLayout({ children }: { children: React.ReactNode
     <DashboardShell
       roleTitle="Dispensary"
       roleColor="bg-emerald-500"
+      useGlobalNav
       sidebarContent={
         <nav className="space-y-1">
           <SidebarItem 
