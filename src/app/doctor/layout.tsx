@@ -6,7 +6,6 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
     <DashboardShell
       roleTitle="Doctor Portal"
       roleColor="bg-blue-600"
-      useGlobalNav
       sidebarContent={
         <nav className="space-y-1">
           <SidebarItem 
