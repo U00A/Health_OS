@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { BedDouble, ClipboardList, Clock } from "lucide-react";
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
         <nav className="space-y-1">
           <SidebarItem 
             href="/staff" 
-            icon={BedDouble} 
+            icon="BedDouble" 
             label="Bed Grid" 
             activeColor="bg-sky-500" 
           />
           <SidebarItem 
             href="/staff/tasks" 
-            icon={ClipboardList} 
+            icon="ClipboardList" 
             label="Shift Tasks" 
             activeColor="bg-sky-500" 
           />
           <SidebarItem 
             href="/staff/history" 
-            icon={Clock} 
+            icon="Clock" 
             label="Recent Activity" 
             activeColor="bg-sky-500" 
           />

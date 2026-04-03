@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { Building2, Stethoscope, BriefcaseMedical } from "lucide-react";
 
 export default function PrivateLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
         <nav className="space-y-1">
           <SidebarItem 
             href="/private" 
-            icon={Building2} 
+            icon="Building2" 
             label="My Clinic" 
             activeColor="bg-teal-500" 
           />
           <SidebarItem 
             href="/private/patients" 
-            icon={Stethoscope} 
+            icon="Stethoscope" 
             label="Private Patients" 
             activeColor="bg-teal-500" 
           />
           <SidebarItem 
             href="/private/billing" 
-            icon={BriefcaseMedical} 
+            icon="BriefcaseMedical" 
             label="Billing" 
             activeColor="bg-teal-500" 
           />

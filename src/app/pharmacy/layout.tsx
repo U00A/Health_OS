@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { Pill, ScanLine, AlertCircle } from "lucide-react";
 
 export default function PharmacyLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function PharmacyLayout({ children }: { children: React.ReactNode
         <nav className="space-y-1">
           <SidebarItem 
             href="/pharmacy" 
-            icon={Pill} 
+            icon="Pill" 
             label="Pending Orders" 
             activeColor="bg-emerald-500" 
           />
           <SidebarItem 
             href="/pharmacy/inventory" 
-            icon={ScanLine} 
+            icon="ScanLine" 
             label="Inventory Scan" 
             activeColor="bg-emerald-500" 
           />
           <SidebarItem 
             href="/pharmacy/alerts" 
-            icon={AlertCircle} 
+            icon="AlertCircle" 
             label="Interactions" 
             activeColor="bg-emerald-500" 
           />

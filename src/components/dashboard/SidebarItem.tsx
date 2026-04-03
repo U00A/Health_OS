@@ -5,16 +5,28 @@ import { usePathname } from "next/navigation";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 
+// Map of available lucide icons by name
+import * as LucideIcons from "lucide-react";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const iconMap = LucideIcons as Record<string, any>;
+
 interface SidebarItemProps {
   href: string;
-  icon: LucideIcon;
+  icon: string | LucideIcon;
   label: string;
   activeColor?: string; // Optional custom color for active state
 }
 
-export function SidebarItem({ href, icon: Icon, label, activeColor }: SidebarItemProps) {
+export function SidebarItem({ href, icon, label, activeColor }: SidebarItemProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
+  
+  // Resolve the icon: if it's a string, look it up in the map; otherwise use it directly
+  const Icon = typeof icon === "string" ? iconMap[icon] : icon;
+  
+  if (!Icon) {
+    return null;
+  }
 
   return (
     <Link

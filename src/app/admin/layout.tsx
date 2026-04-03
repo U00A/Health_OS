@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { Users, Shield, Settings } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="space-y-1">
           <SidebarItem 
             href="/admin" 
-            icon={Shield} 
+            icon="Shield" 
             label="Security & Access" 
             activeColor="bg-slate-900" 
           />
           <SidebarItem 
             href="/admin/users" 
-            icon={Users} 
+            icon="Users" 
             label="User Management" 
             activeColor="bg-slate-900" 
           />
           <SidebarItem 
             href="/admin/settings" 
-            icon={Settings} 
+            icon="Settings" 
             label="System Settings" 
             activeColor="bg-slate-900" 
           />

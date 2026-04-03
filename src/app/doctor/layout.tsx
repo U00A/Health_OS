@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { UserRound, CalendarHeart, FileText } from "lucide-react";
 
 export default function DoctorLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         <nav className="space-y-1">
           <SidebarItem 
             href="/doctor" 
-            icon={UserRound} 
+            icon="UserRound" 
             label="My Patients" 
             activeColor="bg-blue-600" 
           />
           <SidebarItem 
             href="/doctor/appointments" 
-            icon={CalendarHeart} 
+            icon="CalendarHeart" 
             label="Schedule" 
             activeColor="bg-blue-600" 
           />
           <SidebarItem 
             href="/doctor/reports" 
-            icon={FileText} 
+            icon="FileText" 
             label="Clinical Reports" 
             activeColor="bg-blue-600" 
           />

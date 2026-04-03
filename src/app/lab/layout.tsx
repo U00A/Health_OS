@@ -1,6 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { SidebarItem } from "@/components/dashboard/SidebarItem";
-import { Microscope, TestTube2, Archive } from "lucide-react";
 
 export default function LabLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,19 +10,19 @@ export default function LabLayout({ children }: { children: React.ReactNode }) {
         <nav className="space-y-1">
           <SidebarItem 
             href="/lab" 
-            icon={Microscope} 
+            icon="Microscope" 
             label="Active Queue" 
             activeColor="bg-violet-600" 
           />
           <SidebarItem 
             href="/lab/samples" 
-            icon={TestTube2} 
+            icon="TestTube2" 
             label="Sample Tracking" 
             activeColor="bg-violet-600" 
           />
           <SidebarItem 
             href="/lab/archive" 
-            icon={Archive} 
+            icon="Archive" 
             label="Results Archive" 
             activeColor="bg-violet-600" 
           />
