@@ -1,0 +1,313 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* ═══════════════════════════════════════════════
+   HealthOS Design System — Global Tokens
+   ═══════════════════════════════════════════════ */
+
+@theme {
+  --font-sans: "Inter", var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "JetBrains Mono", monospace;
+  --font-display: "Inter", var(--font-geist-sans), system-ui, sans-serif;
+
+  /* Brand */
+  --color-brand: oklch(0.5882 0.2117 264.05);
+  --color-brand-foreground: oklch(0.98 0 0);
+
+  /* Primary Palette */
+  --color-primary: oklch(0.5882 0.2117 264.05);
+  --color-secondary: oklch(0.65 0.15 150);
+  --color-tertiary: oklch(0.7 0.12 30);
+
+  /* Role Accent Colors */
+  --color-role-admin: oklch(0.45 0.15 280);
+  --color-role-doctor: oklch(0.55 0.2 250);
+  --color-role-staff: oklch(0.58 0.18 240);
+  --color-role-pharmacy: oklch(0.55 0.18 155);
+  --color-role-lab: oklch(0.5 0.18 290);
+  --color-role-private: oklch(0.55 0.15 180);
+  --color-role-patient: oklch(0.5 0.16 250);
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  --background: oklch(0.985 0.005 260);
+  --foreground: oklch(0.13 0.02 260);
+  --accent: oklch(0.5882 0.2117 264.05);
+  --surface: oklch(0.97 0.005 260);
+  --surface-raised: oklch(1 0 0);
+  --border: oklch(0.9 0.01 260);
+  --border-subtle: oklch(0.93 0.005 260);
+  --text-muted: oklch(0.55 0.02 260);
+  --text-subtle: oklch(0.7 0.01 260);
+}
+
+.dark {
+  --background: oklch(0.12 0.02 260);
+  --foreground: oklch(0.95 0.01 260);
+  --accent: oklch(0.55 0.18 264);
+  --surface: oklch(0.16 0.02 260);
+  --surface-raised: oklch(0.2 0.02 260);
+  --border: oklch(0.25 0.02 260);
+  --border-subtle: oklch(0.2 0.015 260);
+  --text-muted: oklch(0.6 0.02 260);
+  --text-subtle: oklch(0.45 0.01 260);
+}
+
+/* ═══════════════════════════════════════════════
+   Base Styles
+   ═══════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+::selection {
+  background: oklch(0.5882 0.2117 264.05 / 0.15);
+}
+
+/* Focus Ring */
+*:focus-visible {
+  outline: 2px solid oklch(0.5882 0.2117 264.05 / 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   Custom Scrollbar
+   ═══════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.5882 0.2117 264.05 / 0.15);
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5882 0.2117 264.05 / 0.3);
+}
+
+/* ═══════════════════════════════════════════════
+   Scroll Reveal Animations
+   ═══════════════════════════════════════════════ */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   Utility Classes
+   ═══════════════════════════════════════════════ */
+
+.animate-fade-up {
+  animation: fade-up 0.8s var(--ease-out-expo) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.8s var(--ease-out-expo) both;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Glass Effect */
+.glass {
+  background: oklch(1 0 0 / 0.6);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid oklch(1 0 0 / 0.2);
+}
+
+.glass-dark {
+  background: oklch(0.1 0.02 260 / 0.7);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid oklch(1 0 0 / 0.1);
+}
+
+/* Gradient Text */
+.text-gradient {
+  background: linear-gradient(135deg, oklch(0.5882 0.2117 264.05), oklch(0.55 0.2 300));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.dashboard-card:hover {
+  border-color: var(--border);
+  box-shadow: 0 8px 30px oklch(0 0 0 / 0.04);
+}
+
+/* Stat Card */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), oklch(0.55 0.2 300));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+/* Sidebar Link Design */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.3s var(--ease-out-expo);
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-link:hover {
+  background: oklch(0.5882 0.2117 264.05 / 0.05);
+  color: var(--foreground);
+  transform: translateX(4px);
+}
+
+.sidebar-link.active {
+  background: oklch(0.5882 0.2117 264.05 / 0.08);
+  color: oklch(0.5882 0.2117 264.05);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px oklch(0.5882 0.2117 264.05 / 0.1);
+}
+
+.sidebar-link.active:hover {
+  transform: none; /* No shift for active items */
+}
