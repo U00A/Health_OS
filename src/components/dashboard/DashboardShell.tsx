@@ -5,29 +5,34 @@ import { authClient } from "@/lib/auth-client";
 import { LogOut, Menu, X, Activity } from "lucide-react";
 import Link from "next/link";
 import { BackButton, GlobalNavigationHeader, MobileBottomNavigation } from "@/components/navigation";
-import { useNavigation, useSectionInfo } from "@/hooks/useNavigation";
+import { useSectionInfo } from "@/hooks/useNavigation";
+import { useRoleNavigation } from "@/hooks/useRoleNavigation";
 
 interface DashboardShellProps {
   children: React.ReactNode;
-  roleTitle: string;
-  roleColor?: string; // Tailwind class e.g. "bg-blue-600"
+  roleTitle?: string; // Override auto-detected role title
+  roleColor?: string; // Override auto-detected role color
   sidebarContent?: React.ReactNode;
   headerContent?: React.ReactNode;
-  // New navigation props
-  useGlobalNav?: boolean; // Use GlobalNavigationHeader + MobileBottomNav instead of sidebar
+  useGlobalNav?: boolean; // Use GlobalNavigationHeader + MobileBottomNav
 }
 
 export function DashboardShell({
   children,
-  roleTitle,
-  roleColor = "bg-blue-600",
+  roleTitle: overrideTitle,
+  roleColor: overrideColor,
   sidebarContent,
   headerContent,
   useGlobalNav = false,
 }: DashboardShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const { breadcrumbs } = useSectionInfo();
+  const { sections, mobileItems, roleColor, roleTitle } = useRoleNavigation();
   const [announcement, setAnnouncement] = useState<string | null>(null);
+
+  // Use overrides if provided, otherwise use role-based values
+  const finalColor = overrideColor || roleColor;
+  const finalTitle = overrideTitle || roleTitle;
 
   // Announce navigation for screen readers
   const announce = useCallback((message: string) => {
@@ -40,12 +45,13 @@ export function DashboardShell({
     window.location.href = "/login";
   }, []);
 
-  // New global navigation mode
+  // New global navigation mode with role-filtered items
   if (useGlobalNav) {
     return (
       <div className="flex flex-col min-h-screen bg-slate-50">
         <GlobalNavigationHeader
-          roleColor={roleColor}
+          sections={sections}
+          roleColor={finalColor}
           className="flex-shrink-0"
         />
         
@@ -56,7 +62,7 @@ export function DashboardShell({
             <div className="mb-6 flex items-center gap-3">
               <BackButton size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{roleTitle}</h1>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{finalTitle}</h1>
                 <nav aria-label="Breadcrumb" className="hidden md:flex items-center gap-1 mt-1">
                   {breadcrumbs.map((crumb, index) => {
                     const isLast = index === breadcrumbs.length - 1;
@@ -81,8 +87,9 @@ export function DashboardShell({
           </div>
         </main>
 
-        {/* Mobile bottom navigation */}
+        {/* Mobile bottom navigation - role filtered */}
         <MobileBottomNavigation
+          items={mobileItems}
           announcementMessage={announcement}
         />
 
@@ -94,7 +101,7 @@ export function DashboardShell({
     );
   }
 
-  // Classic sidebar mode (backward compatible)
+  // Classic sidebar mode (backward compatible with role-aware mobile nav)
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
       {/* Mobile Sidebar Overlay */}
@@ -115,7 +122,7 @@ export function DashboardShell({
         {/* Sidebar Header */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 shrink-0">
           <Link href="/" className="flex items-center gap-3 group" onClick={() => setSidebarOpen(false)}>
-            <div className={`w-8 h-8 ${roleColor} rounded-lg flex items-center justify-center shadow-md`}>
+            <div className={`w-8 h-8 ${finalColor} rounded-lg flex items-center justify-center shadow-md`}>
               <Activity className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-slate-900 tracking-tight">Health<span className="text-blue-600">OS</span></span>
@@ -130,11 +137,11 @@ export function DashboardShell({
         </div>
 
         {/* Role Indicator Strip */}
-        <div className={`h-[3px] w-full ${roleColor}`} />
+        <div className={`h-[3px] w-full ${finalColor}`} />
         
         <div className="px-6 py-5 shrink-0">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Portal Overview</span>
-          <div className="font-black text-xl text-slate-900 tracking-tight mt-1">{roleTitle}</div>
+          <div className="font-black text-xl text-slate-900 tracking-tight mt-1">{finalTitle}</div>
         </div>
 
         {/* Custom Sidebar Content (e.g. Nav Links, Patient List) */}
@@ -181,8 +188,8 @@ export function DashboardShell({
           </div>
         </main>
 
-        {/* Mobile bottom navigation for sidebar mode */}
-        <MobileBottomNavigation announcementMessage={announcement} />
+        {/* Mobile bottom navigation - role filtered */}
+        <MobileBottomNavigation items={mobileItems} announcementMessage={announcement} />
       </div>
     </div>
   );

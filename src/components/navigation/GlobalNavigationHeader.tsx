@@ -15,7 +15,7 @@ import {
 import { useNavigation, useSectionInfo, getDefaultBackRoute } from "@/hooks/useNavigation";
 import { authClient } from "@/lib/auth-client";
 
-interface SectionLink {
+export interface SectionLink {
   href: string;
   label: string;
   icon: string;
