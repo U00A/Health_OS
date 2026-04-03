@@ -6,7 +6,6 @@ export default function LabLayout({ children }: { children: React.ReactNode }) {
     <DashboardShell
       roleTitle="Laboratory Queue"
       roleColor="bg-violet-600"
-      useGlobalNav
       sidebarContent={
         <nav className="space-y-1">
           <SidebarItem 
