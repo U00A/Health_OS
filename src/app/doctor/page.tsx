@@ -238,7 +238,7 @@ export default function DoctorPage() {
                         </Chip>
                       )}
                       {p.activePrescriptionCount > 0 && (
-                        <Chip size="sm" color="primary" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
+                        <Chip size="sm" color="accent" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
                           {p.activePrescriptionCount} Rx
                         </Chip>
                       )}
