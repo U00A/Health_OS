@@ -199,15 +199,22 @@ export function RegisterPatientForm({ betterAuthId, onSuccess, onCancel }: Regis
           </label>
           <div className="flex gap-2 flex-wrap mb-2">
             {allergies.map((a) => (
-              <Chip
-                key={a}
-                color="danger"
-                variant="soft"
-                className="text-[10px] font-black uppercase tracking-widest"
-                onClose={() => removeAllergy(a)}
-              >
-                {a}
-              </Chip>
+              <div key={a} className="flex items-center gap-1">
+                <Chip
+                  color="danger"
+                  variant="soft"
+                  className="text-[10px] font-black uppercase tracking-widest"
+                >
+                  {a}
+                </Chip>
+                <button
+                  type="button"
+                  onClick={() => removeAllergy(a)}
+                  className="text-slate-400 hover:text-slate-600 rounded-full p-1 hover:bg-slate-100"
+                >
+                  <X size={12} />
+                </button>
+              </div>
             ))}
           </div>
           <div className="flex gap-2">
