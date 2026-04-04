@@ -6,7 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
   Building2, UserPlus, Users, FileText, Pill, Beaker,
-  AlertTriangle, UserRound, Plus, TrendingUp
+  AlertTriangle, UserRound, Plus, TrendingUp, Fingerprint, Eye, EyeOff
 } from "lucide-react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -18,8 +18,10 @@ import { LabOrderForm } from "@/components/clinical/LabOrderForm";
 import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 import { SignalButton } from "@/components/clinical/SignalButton";
+import { BiometricGate } from "@/components/auth/BiometricGate";
 
-type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register";
+type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register" | "biometric_gate";
+type ConsultationMode = "absent" | "present" | null; // null = not yet determined
 
 interface EnrichedPatient {
   _id: string;
@@ -47,11 +49,37 @@ export default function PrivatePage() {
   const [selectedPatient, setSelectedPatient] = useState<Doc<"patients"> | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("list");
   const [showSearch, setShowSearch] = useState(false);
+  const [consultationMode, setConsultationMode] = useState<ConsultationMode>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const handleSelectPatient = (p: Doc<"patients">) => {
     setSelectedPatient(p);
+    setConsultationMode(null); // Reset mode on new patient selection
+    setSessionId(null);
+    setActiveView("biometric_gate"); // Always start with biometric gate
+  };
+
+  const handleBiometricVerified = (newSessionId: string) => {
+    setSessionId(newSessionId);
+    setConsultationMode("present");
     setActiveView("list");
   };
+
+  const handleBiometricDenied = () => {
+    // Fall back to patient-absent mode
+    setConsultationMode("absent");
+    setActiveView("list");
+  };
+
+  const handleExitConsultation = () => {
+    setSelectedPatient(null);
+    setConsultationMode(null);
+    setSessionId(null);
+    setActiveView("list");
+  };
+
+  // Check if we should show restricted view (patient-absent mode)
+  const isAbsentMode = consultationMode === "absent";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -78,13 +106,66 @@ export default function PrivatePage() {
         </div>
       </div>
 
+      {/* Consultation Mode Banner */}
+      {selectedPatient && consultationMode && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between ${
+          consultationMode === "present"
+            ? "bg-emerald-50 border-emerald-200"
+            : "bg-amber-50 border-amber-200"
+        }`}>
+          <div className="flex items-center gap-3">
+            {consultationMode === "present" ? (
+              <>
+                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <Fingerprint size={16} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-emerald-800 text-sm">Patient-Present Mode — Active Consultation</p>
+                  <p className="text-xs text-emerald-600">Full clinical access with biometric confirmation</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <EyeOff size={16} className="text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-amber-800 text-sm">Patient-Absent Mode — Record Review</p>
+                  <p className="text-xs text-amber-600">Restricted to your own clinical output only</p>
+                </div>
+              </>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={`font-bold ${consultationMode === "present" ? "text-emerald-700" : "text-amber-700"}`}
+            onPress={handleExitConsultation}
+          >
+            Exit
+          </Button>
+        </div>
+      )}
+
       {/* Patient Header */}
       {selectedPatient && (
-        <PatientHeaderBar patient={selectedPatient} onClose={() => { setSelectedPatient(null); setActiveView("list"); }} />
+        <PatientHeaderBar patient={selectedPatient} onClose={handleExitConsultation} />
+      )}
+
+      {/* Biometric Gate */}
+      {selectedPatient && activeView === "biometric_gate" && betterAuthId && (
+        <Card className="border border-blue-200 shadow-lg">
+          <BiometricGate
+            patientId={selectedPatient._id as Id<"patients">}
+            doctorBetterAuthId={betterAuthId}
+            onVerified={handleBiometricVerified}
+            onDenied={handleBiometricDenied}
+          />
+        </Card>
       )}
 
       {/* Action Buttons */}
-      {selectedPatient && activeView === "list" && betterAuthId && (
+      {selectedPatient && activeView === "list" && betterAuthId && consultationMode === "present" && (
         <div className="flex gap-3 flex-wrap">
           <Button className="font-bold bg-indigo-600 text-white shadow-md shadow-indigo-200" onPress={() => setActiveView("compte_rendu")}>
             <FileText size={14} /> Write Compte Rendu
@@ -99,8 +180,34 @@ export default function PrivatePage() {
         </div>
       )}
 
-      {/* Vitals Trends Section */}
-      {selectedPatient && activeView === "list" && (
+      {/* Patient-Absent Mode Notice */}
+      {selectedPatient && activeView === "list" && isAbsentMode && (
+        <Card className="border border-amber-200 bg-amber-50/50 shadow-none">
+          <div className="p-5 flex items-start gap-3">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+              <EyeOff size={18} className="text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-amber-800 text-sm mb-1">Restricted View — Patient Not Present</h3>
+              <p className="text-xs text-amber-600 leading-relaxed">
+                You are viewing only your own Comptes Rendus, prescriptions, and lab results. 
+                To access the patient's complete clinical record, open a patient-present consultation 
+                with biometric confirmation.
+              </p>
+              <Button
+                size="sm"
+                className="mt-3 font-bold bg-emerald-600 text-white"
+                onPress={() => setActiveView("biometric_gate")}
+              >
+                <Fingerprint size={14} /> Start Consultation
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Vitals Trends Section — Only in patient-present mode */}
+      {selectedPatient && activeView === "list" && consultationMode === "present" && (
         <div className="space-y-4 mt-6">
           <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
             <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600">
@@ -117,14 +224,14 @@ export default function PrivatePage() {
         </div>
       )}
 
-      {/* Forms */}
-      {selectedPatient && activeView === "prescription" && betterAuthId && (
+      {/* Forms — Only in patient-present mode */}
+      {selectedPatient && activeView === "prescription" && betterAuthId && consultationMode === "present" && (
         <PrescriptionForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
-      {selectedPatient && activeView === "compte_rendu" && betterAuthId && (
+      {selectedPatient && activeView === "compte_rendu" && betterAuthId && consultationMode === "present" && (
         <CompteRenduForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
-      {selectedPatient && activeView === "lab_order" && betterAuthId && (
+      {selectedPatient && activeView === "lab_order" && betterAuthId && consultationMode === "present" && (
         <LabOrderForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
       {activeView === "register" && betterAuthId && (

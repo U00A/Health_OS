@@ -13,6 +13,7 @@ interface LabResultEntryFormProps {
   betterAuthId: string;
   onSuccess?: () => void;
   onCancel?: () => void;
+  onCriticalAlert?: (patientName: string, analysisType: string, values: string) => void;
 }
 
 // Reference ranges by analysis type
@@ -57,6 +58,7 @@ export function LabResultEntryForm({
   betterAuthId,
   onSuccess,
   onCancel,
+  onCriticalAlert,
 }: LabResultEntryFormProps) {
   const uploadResult = useMutation(api.labResults.uploadResult);
   const fields = PANEL_FIELDS[analysisType] || DEFAULT_FIELDS;
@@ -66,9 +68,25 @@ export function LabResultEntryForm({
   const handleSubmit = async () => {
     // Convert string values to numbers
     const numericValues: Record<string, number | null> = {};
+    const criticalValues: string[] = [];
     for (const f of fields) {
       const v = values[f.key];
       numericValues[f.key] = v ? Number(v) : null;
+      // Check for critical values (simplified thresholds)
+      if (v) {
+        const num = Number(v);
+        const refParts = f.refRange.replace(/[<>]/g, "").split("-").map(Number);
+        if (refParts.length === 2 && !isNaN(refParts[0]) && !isNaN(refParts[1])) {
+          if (num < refParts[0] * 0.7 || num > refParts[1] * 1.3) {
+            criticalValues.push(`${f.label}: ${v} ${f.unit} (ref: ${f.refRange})`);
+          }
+        }
+      }
+    }
+
+    // Fire critical value alert if any detected
+    if (criticalValues.length > 0 && onCriticalAlert) {
+      onCriticalAlert(patientName, analysisType, criticalValues.join("; "));
     }
 
     setSaving(true);

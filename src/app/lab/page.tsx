@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Microscope, Beaker, FlaskConical, UploadCloud, FileText, Clock, CheckCircle2, Inbox } from "lucide-react";
+import { Microscope, Beaker, FlaskConical, UploadCloud, FileText, Clock, CheckCircle2, Inbox, AlertTriangle, AlertCircle, TrendingUp, BarChart3, ClipboardList, TestTube } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { LabResultEntryForm } from "@/components/clinical/LabResultEntryForm";
@@ -13,7 +13,9 @@ export default function LabPage() {
   const orders = useQuery(api.labOrders.listPendingOrders, betterAuthId ? { betterAuthId } : "skip");
   const updateStatus = useMutation(api.labOrders.updateStatus);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-
+  const [showCriticalAlert, setShowCriticalAlert] = useState<{ patientName: string; analysisType: string; values: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<"queue" | "completed" | "stats">("queue");
+ 
   const selectedOrderData = orders?.find((o) => o._id === selectedOrder);
 
   const getElapsedTime = (orderedAt: number) => {
@@ -30,6 +32,10 @@ export default function LabPage() {
     } catch (e: unknown) { alert((e as Error).message); }
   };
 
+  const handleCriticalValueAlert = (patientName: string, analysisType: string, values: string) => {
+    setShowCriticalAlert({ patientName, analysisType, values });
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex border-b border-slate-200 pb-6 items-center gap-4">
@@ -44,8 +50,30 @@ export default function LabPage() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex gap-2">
+        {[
+          { key: "queue" as const, label: "Order Queue", icon: Inbox },
+          { key: "completed" as const, label: "Completed", icon: CheckCircle2 },
+          { key: "stats" as const, label: "Workload Stats", icon: BarChart3 },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === tab.key
+                ? "bg-slate-900 text-white shadow-md"
+                : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
+            }`}
+          >
+            <tab.icon size={16} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Stats Bar */}
-      {orders && (
+      {orders && activeTab === "queue" && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="bg-violet-600 text-white border-none shadow-lg shadow-violet-200">
             <div className="p-4 text-center">
@@ -80,8 +108,53 @@ export default function LabPage() {
         </div>
       )}
 
+      {/* Critical Value Alert Modal */}
+      {showCriticalAlert && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <AlertTriangle size={24} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-red-700 text-lg">CRITICAL VALUE DETECTED</h3>
+                <p className="text-sm text-red-500">Immediate attention required</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-6">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs text-slate-500 font-medium">Patient</p>
+                <p className="font-bold text-slate-900">{showCriticalAlert.patientName}</p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs text-slate-500 font-medium">Analysis</p>
+                <p className="font-bold text-slate-900">{showCriticalAlert.analysisType}</p>
+              </div>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-xs text-red-500 font-medium">Critical Values</p>
+                <p className="font-bold text-red-700 text-sm">{showCriticalAlert.values}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                className="flex-1 font-bold bg-red-600 text-white"
+                onPress={() => {
+                  // In production, this would fire a real-time alert to the ordering doctor
+                  setShowCriticalAlert(null);
+                }}
+              >
+                <AlertCircle size={16} /> Alert Ordering Doctor
+              </Button>
+              <Button variant="ghost" className="font-bold" onPress={() => setShowCriticalAlert(null)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Result Entry Form */}
-      {selectedOrder && selectedOrderData && betterAuthId && (
+      {selectedOrder && selectedOrderData && betterAuthId && activeTab === "queue" && (
         <LabResultEntryForm
           orderId={selectedOrder}
           analysisType={selectedOrderData.analysis_type}
@@ -89,11 +162,70 @@ export default function LabPage() {
           betterAuthId={betterAuthId}
           onSuccess={() => setSelectedOrder(null)}
           onCancel={() => setSelectedOrder(null)}
+          onCriticalAlert={handleCriticalValueAlert}
         />
       )}
 
+      {/* Completed Orders Tab */}
+      {activeTab === "completed" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <CheckCircle2 size={20} className="text-emerald-600" />
+            Completed Results
+          </h2>
+          <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
+            <div className="p-12 text-center">
+              <ClipboardList size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="font-bold text-slate-700 text-lg mb-2">No Completed Results</h3>
+              <p className="text-slate-500 text-sm font-medium">Completed results will appear here.</p>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Workload Stats Tab */}
+      {activeTab === "stats" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <BarChart3 size={20} className="text-violet-600" />
+            Daily Workload Summary
+          </h2>
+          {orders && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card className="border border-slate-200 bg-white">
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp size={16} className="text-emerald-600" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Completed Today</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">0</div>
+                </div>
+              </Card>
+              <Card className="border border-slate-200 bg-white">
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={16} className="text-amber-600" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Avg Turnaround</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">--</div>
+                </div>
+              </Card>
+              <Card className="border border-slate-200 bg-white">
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle size={16} className="text-red-600" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Critical Alerts</span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900">0</div>
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Orders List */}
-      {!selectedOrder && (
+      {!selectedOrder && activeTab === "queue" && (
         <div className="space-y-4">
           {orders === undefined ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)

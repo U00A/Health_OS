@@ -1,6 +1,6 @@
 # PRD v2.0 Gap Analysis — Current Status
 
-_Last updated: 4/4/2026 10:29 PM_
+_Last updated: 4/4/2026 10:49 PM_
 
 ## COMPLETED ✅
 
@@ -20,6 +20,7 @@ _Last updated: 4/4/2026 10:29 PM_
 - [x] Schema fields: users.clinic_name, clinic_address, professional_id
 - [x] Schema fields: lab_results.critical_values, amends_result_id
 - [x] Schema fields: compte_rendus.template_id, speciality_id
+- [x] Prescription expiry check (convex/prescriptions.ts — checkExpiry query + listPending filters expired)
 
 ### Frontend — All 7 Role Dashboards
 - [x] BellNotification component with unread badges, mark-as-read, escalation ack
@@ -39,6 +40,16 @@ _Last updated: 4/4/2026 10:29 PM_
   - [x] Integrated into Pharmacy dispensing workflow
   - [x] Severe interactions block dispense
   - [x] Moderate/mild interactions shown as warnings
+- [x] **Patient Timeline View** ✅ (State Doctor — src/app/doctor/page.tsx)
+  - [x] Unified chronological feed (CRs, Labs, Rx, Vitals)
+  - [x] Filterable by type
+- [x] **Prescription Expiry Warning** ✅ (Pharmacy — src/app/pharmacy/page.tsx + convex/prescriptions.ts)
+  - [x] Expired prescriptions filtered from queue
+  - [x] Days-until-expiry shown for prescriptions nearing expiry
+- [x] **Discharge Checklist** ✅ (Medical Staff — src/app/staff/page.tsx)
+  - [x] 4 mandatory checklist items (medication given, patient briefed, summary printed, bed cleared)
+  - [x] All items must be completed before discharge
+  - [x] Discharge logged as case_entry
 
 ### Per-Role Status
 
@@ -68,8 +79,8 @@ _Last updated: 4/4/2026 10:29 PM_
 - [x] Vitals trends charts (5 metrics)
 - [x] Patient search modal
 - [x] Allergy conflict display
+- [x] **Patient Timeline View** ✅
 - [ ] Full document visibility — unmasked (see private doctor names)
-- [ ] Patient timeline view (unified chronological feed)
 - [ ] Allergy conflict banner (blocking modal on direct allergen conflict)
 - [ ] Shift handover note
 - [ ] Lab result trend chart (with reference range bands)
@@ -90,7 +101,7 @@ _Last updated: 4/4/2026 10:29 PM_
 - [x] Vitals recording
 - [x] Register patient
 - [x] Escalation button (one-tap → case_entry logged)
-- [ ] Discharge checklist (mandatory before bed resets)
+- [x] **Discharge Checklist** ✅
 - [ ] On-duty roster view
 - [ ] Shift handover summary (auto-generated)
 - [ ] Supply request log
@@ -101,12 +112,14 @@ _Last updated: 4/4/2026 10:29 PM_
 - [x] Medication verification step (per-line)
 - [x] Dispense submission (immutable)
 - [x] Allergy display on prescriptions
-- [x] **Drug interaction checker** (mild/moderate/severe) ✅ JUST COMPLETED
+- [x] **Drug interaction checker** (mild/moderate/severe) ✅
   - [x] Severe interactions block dispense
   - [x] Moderate interactions show warning
   - [x] Mild interactions show informational notice
+- [x] **Prescription expiry warning** ✅
+  - [x] Expired prescriptions filtered from queue
+  - [x] Days-until-expiry displayed
 - [ ] Partial dispense support (out-of-stock with restock date)
-- [ ] Prescription expiry warning (block dispense on expired)
 - [ ] Controlled substance flag (extra confirmation for opioids, etc.)
 - [ ] Dispensing stats panel (shift metrics)
 - [ ] Prescription history per patient
@@ -165,17 +178,17 @@ _Last updated: 4/4/2026 10:29 PM_
 | 6 | ~~Drug interaction checker~~ | 6 | Pharmacy | ✅ COMPLETED |
 | 7 | Critical value escalation UI | 7 | Laboratory | Backend done, UI not started |
 | 8 | Full document visibility (unmasked) | 3 | State Doctor | NOT STARTED |
-| 9 | Patient timeline view | 3 | State Doctor | NOT STARTED |
+| 9 | ~~Patient timeline view~~ | 3 | State Doctor | ✅ COMPLETED |
 | 10 | Patient civil registry pages | 5 | Administration | NOT STARTED |
 
 ### HIGH PRIORITY
 
 | # | Feature | Section | Role | Status |
 |---|---------|---------|------|--------|
-| 11 | Discharge checklist | 4 | Medical Staff | NOT STARTED |
+| 11 | ~~Discharge checklist~~ | 4 | Medical Staff | ✅ COMPLETED |
 | 12 | ~~Escalation flag UI~~ | 4 | Medical Staff | ✅ COMPLETED (button on bed card) |
 | 13 | Partial dispense support | 6 | Pharmacy | NOT STARTED |
-| 14 | Prescription expiry warning | 6 | Pharmacy | NOT STARTED |
+| 14 | ~~Prescription expiry warning~~ | 6 | Pharmacy | ✅ COMPLETED |
 | 15 | Controlled substance flag | 6 | Pharmacy | NOT STARTED |
 | 16 | Result amendment workflow | 7 | Laboratory | NOT STARTED |
 | 17 | Batch result entry | 7 | Laboratory | NOT STARTED |
@@ -231,10 +244,10 @@ _Last updated: 4/4/2026 10:29 PM_
 ## DEPLOYMENT STATUS
 - **Dev:** dusty-dinosaur-1 (CONVEX_DEPLOYMENT)
 - **Prod:** original-mallard-109 (https://original-mallard-109.eu-west-1.convex.cloud)
-- **Last deploy:** 4/4/2026 10:29 PM — All changes pushed to prod
+- **Last deploy:** 4/4/2026 10:49 PM — All changes pushed to prod
 
 ## SUMMARY
 - **Total features:** 36
-- **Completed:** 5 (Signal button, Per-bed 4 data points, Escalation flag, Drug interaction library, Drug interaction UI) + all backend infrastructure
+- **Completed:** 9 (Signal button, Per-bed 4 data points, Escalation flag, Drug interaction library, Drug interaction UI, Patient timeline view, Prescription expiry warning, Discharge checklist) + all backend infrastructure
 - **Partially complete:** 0
-- **Remaining:** 31 features across all 7 roles
+- **Remaining:** 27 features across all 7 roles

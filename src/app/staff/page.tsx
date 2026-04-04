@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp, Clock, Pill, CalendarDays, AlertTriangle } from "lucide-react";
+import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp, Clock, Pill, CalendarDays, AlertTriangle, CheckSquare, Square, LogOut } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -11,7 +11,7 @@ import { PatientSearchModal } from "@/components/clinical/PatientSearchModal";
 import { VitalsEntryForm } from "@/components/clinical/VitalsEntryForm";
 import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
 
-type StaffView = "main" | "admit" | "vitals" | "register" | "log_entry";
+type StaffView = "main" | "admit" | "vitals" | "register" | "log_entry" | "discharge";
 
 export default function StaffDashboard() {
   const betterAuthId = useBetterAuthId();
@@ -45,6 +45,13 @@ export default function StaffDashboard() {
   const [admitType, setAdmitType] = useState<"emergency" | "scheduled" | "transfer">("scheduled");
   const [vitalsTarget, setVitalsTarget] = useState<{ id: Id<"patients">; name: string } | null>(null);
   const [escalatingBed, setEscalatingBed] = useState<string | null>(null);
+  const [dischargeAdmission, setDischargeAdmission] = useState<{ id: string; bedId: string; patientName: string } | null>(null);
+  const [dischargeChecklist, setDischargeChecklist] = useState({
+    medicationGiven: false,
+    patientBriefed: false,
+    dischargeSummaryPrinted: false,
+    bedCleared: false,
+  });
 
   // Case entry
   const [entryType, setEntryType] = useState<"observation" | "nursing_note" | "escalation" | "procedure" | "general">("observation");
@@ -77,6 +84,31 @@ export default function StaffDashboard() {
     const days = Math.floor(hours / 24);
     if (days > 0) return `${days}d ${hours % 24}h`;
     return `${hours}h`;
+  };
+
+  // Discharge handler
+  const handleDischarge = async () => {
+    if (!dischargeAdmission || !betterAuthId || !firstWardId) return;
+    const allChecked = Object.values(dischargeChecklist).every(Boolean);
+    if (!allChecked) {
+      alert("All checklist items must be completed before discharge.");
+      return;
+    }
+    try {
+      // Log discharge case entry
+      await createEntry({
+        betterAuthId,
+        ward_id: firstWardId,
+        entry_type: "general",
+        notes: "Patient discharged. Checklist completed: medication given, patient briefed, summary printed, bed cleared.",
+        patient_id: dischargeAdmission.id as Id<"patients">,
+      });
+      setDischargeAdmission(null);
+      setDischargeChecklist({ medicationGiven: false, patientBriefed: false, dischargeSummaryPrinted: false, bedCleared: false });
+      setActiveView("main");
+    } catch (e: unknown) {
+      alert((e as Error).message);
+    }
   };
 
   // Escalation handler
@@ -150,6 +182,9 @@ export default function StaffDashboard() {
           </Button>
           <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("vitals")}>
             <HeartPulse size={16} /> Record Vitals
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("discharge")}>
+            <LogOut size={16} /> Discharge
           </Button>
         </div>
       </div>
@@ -261,6 +296,77 @@ export default function StaffDashboard() {
               </Button>
               <Button variant="ghost" className="font-bold" onPress={() => setActiveView("main")}>Cancel</Button>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Discharge Checklist */}
+      {activeView === "discharge" && (
+        <Card className="border border-amber-200 shadow-lg bg-amber-50/30">
+          <div className="p-6 space-y-5">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <LogOut size={18} className="text-amber-600" /> Discharge Checklist
+            </h2>
+            {!dischargeAdmission ? (
+              <div className="space-y-3">
+                <p className="text-sm text-slate-600 font-medium">Select a patient to begin discharge process:</p>
+                {admissions?.filter(a => a.bed_id).map((admission) => (
+                  <button
+                    key={admission._id}
+                    onClick={() => setDischargeAdmission({ id: admission.patient_id, bedId: admission.bed_id, patientName: admission.patientName })}
+                    className="w-full text-left p-4 bg-white border border-slate-200 rounded-xl hover:border-amber-300 transition-colors"
+                  >
+                    <p className="font-bold text-slate-900">{admission.patientName}</p>
+                    <p className="text-xs text-slate-500">Bed: {admission.bedName} | Admitted: {new Date(admission.admitted_at).toLocaleDateString()}</p>
+                  </button>
+                ))}
+                {(!admissions || admissions.length === 0) && (
+                  <div className="p-6 text-center text-slate-400 text-sm">No patients to discharge</div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                  <p className="font-bold text-slate-900">{dischargeAdmission.patientName}</p>
+                  <p className="text-xs text-slate-500">Bed: {dischargeAdmission.bedId}</p>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { key: "medicationGiven" as const, label: "Medication administered for current shift" },
+                    { key: "patientBriefed" as const, label: "Patient briefed on discharge instructions" },
+                    { key: "dischargeSummaryPrinted" as const, label: "Discharge summary printed" },
+                    { key: "bedCleared" as const, label: "Bed cleared and sanitized" },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => setDischargeChecklist(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                      className="w-full flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:border-amber-300 transition-colors"
+                    >
+                      {dischargeChecklist[item.key] ? (
+                        <CheckSquare size={20} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <Square size={20} className="text-slate-400 shrink-0" />
+                      )}
+                      <span className={`text-sm font-medium ${dischargeChecklist[item.key] ? "text-emerald-700 line-through" : "text-slate-700"}`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    className="font-bold bg-amber-600 text-white shadow-md"
+                    onPress={handleDischarge}
+                    isDisabled={!Object.values(dischargeChecklist).every(Boolean)}
+                  >
+                    <LogOut size={14} /> Complete Discharge
+                  </Button>
+                  <Button variant="ghost" className="font-bold" onPress={() => { setDischargeAdmission(null); setActiveView("main"); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       )}

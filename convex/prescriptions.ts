@@ -104,21 +104,51 @@ export const listPending = query({
       .order("desc")
       .collect();
 
-    // Enrich with patient and doctor data
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+    // Enrich with patient and doctor data, plus expiry check
     const enriched = await Promise.all(
       active.map(async (p) => {
         const patient = await ctx.db.get(p.patient_id);
         const doctor = await ctx.db.get(p.doctor_id);
+        const issuedAt = p.issued_at || p._creationTime;
+        const isExpired = now - issuedAt > SEVEN_DAYS_MS;
+        const daysUntilExpiry = Math.floor((SEVEN_DAYS_MS - (now - issuedAt)) / (24 * 60 * 60 * 1000));
+
         return {
           ...p,
           patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Unknown",
           patientNationalId: patient?.national_id || "",
           patientAllergies: patient?.allergies || [],
           doctorName: doctor?.name || "Unknown",
+          isExpired,
+          daysUntilExpiry,
         };
       })
     );
-    return enriched;
+
+    // Filter out expired prescriptions
+    return enriched.filter((p) => !p.isExpired);
+  },
+});
+
+export const checkExpiry = query({
+  args: { prescription_id: v.id("prescriptions") },
+  handler: async (ctx, args) => {
+    const prescription = await ctx.db.get(args.prescription_id);
+    if (!prescription) return { isExpired: true, reason: "Prescription not found" };
+
+    const now = Date.now();
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const issuedAt = prescription.issued_at || prescription._creationTime;
+    const isExpired = now - issuedAt > SEVEN_DAYS_MS;
+
+    if (isExpired) {
+      return { isExpired: true, reason: "Prescription expired (7 days from issue)" };
+    }
+
+    return { isExpired: false, daysRemaining: Math.floor((SEVEN_DAYS_MS - (now - issuedAt)) / (24 * 60 * 60 * 1000)) };
   },
 });
 

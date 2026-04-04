@@ -299,7 +299,9 @@ export default defineSchema({
     // NEW in v2.0: Controlled substance double-log
     is_controlled_substance: v.optional(v.boolean()),
     controlled_reason: v.optional(v.string()),
-  }).index("by_prescription", ["prescription_id"]),
+  })
+    .index("by_prescription", ["prescription_id"])
+    .index("by_pharmacist", ["pharmacist_id"]),
 
   patient_documents: defineTable({
     patient_id: v.id("patients"),
