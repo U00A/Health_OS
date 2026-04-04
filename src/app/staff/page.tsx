@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send } from "lucide-react";
+import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -31,6 +31,9 @@ export default function StaffDashboard() {
   const [admitBed, setAdmitBed] = useState<string>("");
   const [admitType, setAdmitType] = useState<"emergency" | "scheduled" | "transfer">("scheduled");
   const [vitalsTarget, setVitalsTarget] = useState<{ id: Id<"patients">; name: string } | null>(null);
+
+  // Get latest vitals for all admitted patients
+  const admittedPatientIds = admissions?.map(a => a.patient_id as Id<"patients">) ?? [];
 
   // Case entry
   const [entryType, setEntryType] = useState<"observation" | "nursing_note" | "escalation" | "procedure" | "general">("observation");
@@ -87,6 +90,9 @@ export default function StaffDashboard() {
           </Button>
           <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("log_entry")}>
             <ClipboardList size={16} /> Log Entry
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("vitals")}>
+            <HeartPulse size={16} /> Record Vitals
           </Button>
         </div>
       </div>
@@ -275,6 +281,46 @@ export default function StaffDashboard() {
                 })
               )}
             </div>
+          </div>
+
+          {/* Recent Vitals */}
+          <div className="space-y-5 mt-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600">
+                <TrendingUp size={20} />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Recent Vitals</h2>
+            </div>
+            <Card className="border border-slate-200">
+              <div className="p-0 overflow-y-auto max-h-[400px]">
+                <div className="divide-y divide-slate-100">
+                  {admissions?.filter(a => a.patient_id).length === 0 ? (
+                    <div className="p-8 flex items-center justify-center h-32 text-slate-400 font-medium">
+                      No patients to display
+                    </div>
+                  ) : (
+                    admissions?.slice(0, 5).map((admission) => {
+                      return (
+                        <div key={admission._id} className="p-4 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold text-slate-900">{admission.patientName}</span>
+                            <button
+                              onClick={() => setVitalsTarget({ id: admission.patient_id as Id<"patients">, name: admission.patientName })}
+                              className="text-xs text-sky-600 font-bold hover:underline"
+                            >
+                              Record Vitals
+                            </button>
+                          </div>
+                          <div className="flex gap-2 text-sm text-slate-500 font-medium">
+                            Bed: {admission.bedName} | Dr. {admission.doctorName}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Case Logs */}

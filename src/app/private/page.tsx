@@ -5,10 +5,10 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
-  Building2, UserPlus, Users, Search, FileText, Pill, Beaker,
-  AlertTriangle, UserRound, Plus
+  Building2, UserPlus, Users, FileText, Pill, Beaker,
+  AlertTriangle, UserRound, Plus, TrendingUp
 } from "lucide-react";
-import { Doc } from "../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { PatientHeaderBar } from "@/components/patient/PatientHeaderBar";
 import { PatientSearchModal } from "@/components/clinical/PatientSearchModal";
@@ -16,15 +16,33 @@ import { PrescriptionForm } from "@/components/clinical/PrescriptionForm";
 import { CompteRenduForm } from "@/components/clinical/CompteRenduForm";
 import { LabOrderForm } from "@/components/clinical/LabOrderForm";
 import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
+import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 
 type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register";
 
+interface EnrichedPatient {
+  _id: string;
+  _creationTime: number;
+  first_name: string;
+  last_name: string;
+  national_id: string;
+  dob: string;
+  blood_type?: string;
+  wilaya?: string;
+  allergies?: string[];
+  phone?: string;
+  activePrescriptionCount: number;
+  pendingLabCount: number;
+}
+
 export default function PrivatePage() {
   const betterAuthId = useBetterAuthId();
-  const patients = useQuery(
+  const rawPatients = useQuery(
     api.doctorPatients.listMyPatients,
     betterAuthId ? { betterAuthId } : "skip"
   );
+  const patients: EnrichedPatient[] = (rawPatients?.filter(Boolean) as EnrichedPatient[]) || [];
+
   const [selectedPatient, setSelectedPatient] = useState<Doc<"patients"> | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("list");
   const [showSearch, setShowSearch] = useState(false);
@@ -45,22 +63,15 @@ export default function PrivatePage() {
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Private Practice</h1>
             <p className="text-slate-500 font-medium mt-1">
-              {patients ? `${patients.length} enrolled patients` : "Loading..."}
+              {rawPatients !== undefined ? `${patients.length} enrolled patients` : "Loading..."}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            className="font-bold bg-teal-600 text-white shadow-md shadow-teal-200"
-            onPress={() => setShowSearch(true)}
-          >
+          <Button className="font-bold bg-teal-600 text-white shadow-md shadow-teal-200" onPress={() => setShowSearch(true)}>
             <UserPlus size={16} /> Enroll Patient
           </Button>
-          <Button
-            variant="ghost"
-            className="font-bold text-teal-700 border border-teal-200"
-            onPress={() => setActiveView("register")}
-          >
+          <Button variant="ghost" className="font-bold text-teal-700 border border-teal-200" onPress={() => setActiveView("register")}>
             <Plus size={16} /> Register New
           </Button>
         </div>
@@ -68,10 +79,7 @@ export default function PrivatePage() {
 
       {/* Patient Header */}
       {selectedPatient && (
-        <PatientHeaderBar
-          patient={selectedPatient}
-          onClose={() => { setSelectedPatient(null); setActiveView("list"); }}
-        />
+        <PatientHeaderBar patient={selectedPatient} onClose={() => { setSelectedPatient(null); setActiveView("list"); }} />
       )}
 
       {/* Action Buttons */}
@@ -86,6 +94,24 @@ export default function PrivatePage() {
           <Button className="font-bold bg-violet-600 text-white shadow-md shadow-violet-200" onPress={() => setActiveView("lab_order")}>
             <Beaker size={14} /> Order Lab
           </Button>
+        </div>
+      )}
+
+      {/* Vitals Trends Section */}
+      {selectedPatient && activeView === "list" && (
+        <div className="space-y-4 mt-6">
+          <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
+            <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600">
+              <TrendingUp size={20} />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Vitals Trends</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <VitalsTrendChart patientId={selectedPatient._id as Id<"patients">} metric="systolic_bp" unit="" label="Systolic BP" normalRange={[90, 120]} />
+            <VitalsTrendChart patientId={selectedPatient._id as Id<"patients">} metric="heart_rate" unit=" bpm" label="Heart Rate" normalRange={[60, 100]} />
+            <VitalsTrendChart patientId={selectedPatient._id as Id<"patients">} metric="temperature" unit="°C" label="Temperature" normalRange={[36.1, 37.2]} />
+            <VitalsTrendChart patientId={selectedPatient._id as Id<"patients">} metric="spo2" unit="%" label="SpO2" normalRange={[95, 100]} />
+          </div>
         </div>
       )}
 
@@ -106,7 +132,7 @@ export default function PrivatePage() {
       {/* Patient List */}
       {activeView === "list" && !selectedPatient && (
         <div className="space-y-4">
-          {patients === undefined ? (
+          {rawPatients === undefined ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
           ) : patients.length === 0 ? (
             <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
@@ -128,11 +154,10 @@ export default function PrivatePage() {
             </Card>
           ) : (
             patients.map((p) => (
-              <Card
+              <div
                 key={p._id}
-                isPressable
-                onPress={() => handleSelectPatient(p as unknown as Doc<"patients">)}
-                className="border border-slate-200 shadow-sm hover:border-teal-300 transition-all group cursor-pointer"
+                onClick={() => handleSelectPatient(p as unknown as Doc<"patients">)}
+                className="border border-slate-200 shadow-sm hover:border-teal-300 transition-all group cursor-pointer rounded-2xl bg-white"
               >
                 <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -151,7 +176,7 @@ export default function PrivatePage() {
                       {p.allergies && p.allergies.length > 0 && (
                         <div className="flex items-center gap-1 mt-1">
                           <AlertTriangle size={12} className="text-red-500" />
-                          {p.allergies.map((a: string) => (
+                          {p.allergies.map((a) => (
                             <Chip key={a} size="sm" color="danger" variant="soft" className="text-[9px] font-black uppercase">
                               {a}
                             </Chip>
@@ -169,7 +194,7 @@ export default function PrivatePage() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>

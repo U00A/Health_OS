@@ -4,29 +4,48 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
-import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle } from "lucide-react";
-import { Doc } from "../../../convex/_generated/dataModel";
+import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle, TrendingUp } from "lucide-react";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { PatientHeaderBar } from "@/components/patient/PatientHeaderBar";
 import { PatientSearchModal } from "@/components/clinical/PatientSearchModal";
 import { PrescriptionForm } from "@/components/clinical/PrescriptionForm";
 import { CompteRenduForm } from "@/components/clinical/CompteRenduForm";
 import { LabOrderForm } from "@/components/clinical/LabOrderForm";
+import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 
 type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order";
 
+// Enriched patient type from listMyPatients
+interface EnrichedPatient {
+  _id: string;
+  _creationTime: number;
+  first_name: string;
+  last_name: string;
+  national_id: string;
+  dob: string;
+  blood_type?: string;
+  wilaya?: string;
+  allergies?: string[];
+  phone?: string;
+  activePrescriptionCount: number;
+  pendingLabCount: number;
+}
+
 export default function DoctorPage() {
   const betterAuthId = useBetterAuthId();
-  const patients = useQuery(
+  const rawPatients = useQuery(
     api.doctorPatients.listMyPatients,
     betterAuthId ? { betterAuthId } : "skip"
   );
+  const patients: EnrichedPatient[] = (rawPatients?.filter(Boolean) as EnrichedPatient[]) || [];
+
   const [selectedPatient, setSelectedPatient] = useState<Doc<"patients"> | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("list");
   const [showSearch, setShowSearch] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
 
-  const filteredPatients = patients?.filter(
+  const filteredPatients = patients.filter(
     (p) =>
       !searchFilter ||
       `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -45,7 +64,7 @@ export default function DoctorPage() {
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Clinical Overview</h1>
           <p className="text-slate-500 font-medium mt-1">
-            {patients ? `${patients.length} active patients` : "Loading..."}
+            {rawPatients !== undefined ? `${patients.length} active patients` : "Loading..."}
           </p>
         </div>
         <div className="flex gap-2">
@@ -78,62 +97,87 @@ export default function DoctorPage() {
       {/* Action buttons when patient selected */}
       {selectedPatient && activeView === "list" && (
         <div className="flex gap-3 flex-wrap">
-          <Button
-            className="font-bold bg-indigo-600 text-white shadow-md shadow-indigo-200"
-            onPress={() => setActiveView("compte_rendu")}
-          >
+          <Button className="font-bold bg-indigo-600 text-white shadow-md shadow-indigo-200" onPress={() => setActiveView("compte_rendu")}>
             <FileText size={14} /> Write Compte Rendu
           </Button>
-          <Button
-            className="font-bold bg-blue-600 text-white shadow-md shadow-blue-200"
-            onPress={() => setActiveView("prescription")}
-          >
+          <Button className="font-bold bg-blue-600 text-white shadow-md shadow-blue-200" onPress={() => setActiveView("prescription")}>
             <Pill size={14} /> Write Prescription
           </Button>
-          <Button
-            className="font-bold bg-violet-600 text-white shadow-md shadow-violet-200"
-            onPress={() => setActiveView("lab_order")}
-          >
+          <Button className="font-bold bg-violet-600 text-white shadow-md shadow-violet-200" onPress={() => setActiveView("lab_order")}>
             <Beaker size={14} /> Order Lab
           </Button>
         </div>
       )}
 
+      {/* Vitals Trends Section */}
+      {selectedPatient && activeView === "list" && (
+        <div className="space-y-4 mt-6">
+          <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+              <TrendingUp size={20} />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Vitals Trends</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <VitalsTrendChart
+              patientId={selectedPatient._id as Id<"patients">}
+              metric="systolic_bp"
+              unit=""
+              label="Systolic BP"
+              normalRange={[90, 120]}
+            />
+            <VitalsTrendChart
+              patientId={selectedPatient._id as Id<"patients">}
+              metric="heart_rate"
+              unit=" bpm"
+              label="Heart Rate"
+              normalRange={[60, 100]}
+            />
+            <VitalsTrendChart
+              patientId={selectedPatient._id as Id<"patients">}
+              metric="temperature"
+              unit="°C"
+              label="Temperature"
+              normalRange={[36.1, 37.2]}
+            />
+            <VitalsTrendChart
+              patientId={selectedPatient._id as Id<"patients">}
+              metric="spo2"
+              unit="%"
+              label="SpO2"
+              normalRange={[95, 100]}
+            />
+            <VitalsTrendChart
+              patientId={selectedPatient._id as Id<"patients">}
+              metric="respiratory_rate"
+              unit=" /min"
+              label="Respiratory Rate"
+              normalRange={[12, 20]}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Forms */}
       {selectedPatient && activeView === "prescription" && betterAuthId && (
-        <PrescriptionForm
-          patient={selectedPatient}
-          betterAuthId={betterAuthId}
-          onSuccess={() => setActiveView("list")}
-          onCancel={() => setActiveView("list")}
-        />
+        <PrescriptionForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
       {selectedPatient && activeView === "compte_rendu" && betterAuthId && (
-        <CompteRenduForm
-          patient={selectedPatient}
-          betterAuthId={betterAuthId}
-          onSuccess={() => setActiveView("list")}
-          onCancel={() => setActiveView("list")}
-        />
+        <CompteRenduForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
       {selectedPatient && activeView === "lab_order" && betterAuthId && (
-        <LabOrderForm
-          patient={selectedPatient}
-          betterAuthId={betterAuthId}
-          onSuccess={() => setActiveView("list")}
-          onCancel={() => setActiveView("list")}
-        />
+        <LabOrderForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
       )}
 
       {/* Patient List */}
       {activeView === "list" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            {patients === undefined ? (
+            {rawPatients === undefined ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-24 rounded-2xl" />
               ))
-            ) : filteredPatients && filteredPatients.length === 0 ? (
+            ) : filteredPatients.length === 0 ? (
               <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
                 <div className="p-12 text-center">
                   <UserRound size={48} className="mx-auto text-slate-300 mb-4" />
@@ -147,12 +191,11 @@ export default function DoctorPage() {
                 </div>
               </Card>
             ) : (
-              filteredPatients?.map((p) => (
-                <Card
+              filteredPatients.map((p) => (
+                <div
                   key={p._id}
-                  isPressable
-                  onPress={() => handleSelectPatient(p as unknown as Doc<"patients">)}
-                  className={`border shadow-sm hover:border-blue-300 transition-all group cursor-pointer ${
+                  onClick={() => handleSelectPatient(p as unknown as Doc<"patients">)}
+                  className={`border shadow-sm hover:border-blue-300 transition-all group cursor-pointer rounded-2xl bg-white ${
                     selectedPatient?._id === p._id ? "border-blue-400 bg-blue-50/30 shadow-md shadow-blue-100" : "border-slate-200"
                   }`}
                 >
@@ -179,7 +222,7 @@ export default function DoctorPage() {
                         {p.allergies && p.allergies.length > 0 && (
                           <div className="flex items-center gap-1 mt-1">
                             <AlertTriangle size={12} className="text-red-500" />
-                            {p.allergies.map((a: string) => (
+                            {p.allergies.map((a) => (
                               <Chip key={a} size="sm" color="danger" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
                                 {a}
                               </Chip>
@@ -195,20 +238,20 @@ export default function DoctorPage() {
                         </Chip>
                       )}
                       {p.activePrescriptionCount > 0 && (
-                        <Chip size="sm" color="accent" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
+                        <Chip size="sm" color="primary" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
                           {p.activePrescriptionCount} Rx
                         </Chip>
                       )}
                     </div>
                   </div>
-                </Card>
+                </div>
               ))
             )}
           </div>
 
           {/* Sidebar stats */}
           <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-200 border-none">
+            <Card className="bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-200 border-none">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <Activity size={24} className="text-blue-200" />
@@ -217,7 +260,7 @@ export default function DoctorPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/20">
                     <span className="text-sm font-medium text-blue-100">Active Patients</span>
-                    <span className="font-black font-mono text-2xl">{patients?.length || 0}</span>
+                    <span className="font-black font-mono text-2xl">{patients.length}</span>
                   </div>
                   <div className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/20">
                     <span className="text-sm font-medium text-blue-100">Status</span>

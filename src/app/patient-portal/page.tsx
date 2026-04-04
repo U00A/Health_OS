@@ -4,8 +4,10 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { User, Shield, AlertTriangle, FileText, Phone, Edit2, Check, LogOut, Pill, Beaker, Stethoscope, Clock } from "lucide-react";
+import { User, Shield, AlertTriangle, FileText, Phone, Edit2, Check, LogOut, Pill, Beaker, Stethoscope, Clock, Activity } from "lucide-react";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
+import { Id } from "../../../convex/_generated/dataModel";
+import { VitalsHistory } from "@/components/patient/VitalsHistory";
 
 export default function PatientPortal() {
   const { data: session } = authClient.useSession();
@@ -183,6 +185,19 @@ export default function PatientPortal() {
             </div>
           </Card>
         </div>
+
+        {/* Vitals History */}
+        {profile && (
+          <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+            <div className="p-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                <div className="w-10 h-10 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center"><Activity size={20} /></div>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">Vitals History</h2>
+              </div>
+              <VitalsHistory patientId={profile._id as Id<"patients">} />
+            </div>
+          </Card>
+        )}
 
         {/* Assigned Doctors */}
         <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
