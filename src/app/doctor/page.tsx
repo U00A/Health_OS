@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
-import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle, TrendingUp } from "lucide-react";
+import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle, TrendingUp, CalendarDays, Clock, ClipboardList, TestTube } from "lucide-react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { PatientHeaderBar } from "@/components/patient/PatientHeaderBar";
@@ -14,7 +14,7 @@ import { CompteRenduForm } from "@/components/clinical/CompteRenduForm";
 import { LabOrderForm } from "@/components/clinical/LabOrderForm";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 
-type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order";
+type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "timeline";
 
 // Enriched patient type from listMyPatients
 interface EnrichedPatient {
@@ -44,6 +44,7 @@ export default function DoctorPage() {
   const [activeView, setActiveView] = useState<ActiveView>("list");
   const [showSearch, setShowSearch] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [timelineFilter, setTimelineFilter] = useState<"all" | "cr" | "lab" | "rx" | "vitals">("all");
 
   const filteredPatients = patients.filter(
     (p) =>
@@ -56,6 +57,24 @@ export default function DoctorPage() {
     setSelectedPatient(p);
     setActiveView("list");
   };
+
+  // Fetch timeline data for selected patient
+  const crs = useQuery(
+    api.compteRendus.listByPatient,
+    selectedPatient && activeView === "timeline" ? { patient_id: selectedPatient._id as Id<"patients"> } : "skip"
+  );
+  const labResults = useQuery(
+    api.labResults.listByPatient,
+    selectedPatient && activeView === "timeline" ? { patient_id: selectedPatient._id as Id<"patients"> } : "skip"
+  );
+  const prescriptions = useQuery(
+    api.prescriptions.listByPatient,
+    selectedPatient && activeView === "timeline" ? { patient_id: selectedPatient._id as Id<"patients"> } : "skip"
+  );
+  const vitals = useQuery(
+    api.vitals.listByPatient,
+    selectedPatient && activeView === "timeline" ? { patient_id: selectedPatient._id as Id<"patients"> } : "skip"
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -83,6 +102,15 @@ export default function DoctorPage() {
           >
             <UserPlus size={16} /> Assign Patient
           </Button>
+          {selectedPatient && (
+            <Button
+              variant="ghost"
+              className={`font-bold ${activeView === "timeline" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
+              onPress={() => setActiveView(activeView === "timeline" ? "list" : "timeline")}
+            >
+              <CalendarDays size={16} /> Timeline
+            </Button>
+          )}
         </div>
       </div>
 
@@ -167,6 +195,85 @@ export default function DoctorPage() {
       )}
       {selectedPatient && activeView === "lab_order" && betterAuthId && (
         <LabOrderForm patient={selectedPatient} betterAuthId={betterAuthId} onSuccess={() => setActiveView("list")} onCancel={() => setActiveView("list")} />
+      )}
+
+      {/* Patient Timeline View */}
+      {selectedPatient && activeView === "timeline" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                <CalendarDays size={20} />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Patient Timeline</h2>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "cr", "lab", "rx", "vitals"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setTimelineFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                    timelineFilter === f
+                      ? "bg-slate-900 text-white"
+                      : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  {f === "all" ? "All" : f === "cr" ? "CRs" : f === "lab" ? "Labs" : f === "rx" ? "Rx" : "Vitals"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {(() => {
+              const events: { type: string; date: number; dateStr: string }[] = [];
+              if (crs) crs.forEach((cr) => events.push({ type: "cr", date: cr._creationTime, dateStr: new Date(cr._creationTime).toLocaleString() }));
+              if (labResults) labResults.forEach((lr) => events.push({ type: "lab", date: lr._creationTime, dateStr: new Date(lr._creationTime).toLocaleString() }));
+              if (prescriptions) prescriptions.forEach((rx) => events.push({ type: "rx", date: rx.issued_at, dateStr: new Date(rx.issued_at).toLocaleString() }));
+              if (vitals) vitals.forEach((v) => events.push({ type: "vitals", date: v.recorded_at, dateStr: new Date(v.recorded_at).toLocaleString() }));
+              events.sort((a, b) => b.date - a.date);
+              const filtered = timelineFilter === "all" ? events : events.filter((e) => e.type === timelineFilter);
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-12 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                    <ClipboardList size={32} className="mx-auto text-slate-300 mb-3" />
+                    <p className="text-slate-500 font-medium">No events found for this filter.</p>
+                  </div>
+                );
+              }
+
+              const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+                cr: { icon: FileText, color: "text-indigo-600", bg: "bg-indigo-50", label: "Compte Rendu" },
+                lab: { icon: TestTube, color: "text-violet-600", bg: "bg-violet-50", label: "Lab Result" },
+                rx: { icon: Pill, color: "text-blue-600", bg: "bg-blue-50", label: "Prescription" },
+                vitals: { icon: Activity, color: "text-emerald-600", bg: "bg-emerald-50", label: "Vitals" },
+              };
+
+              return filtered.map((event, idx) => {
+                const config = typeConfig[event.type];
+                const Icon = config.icon;
+                return (
+                  <div key={idx} className="flex gap-4 items-start p-4 border border-slate-200 rounded-xl bg-white hover:border-slate-300 transition-colors">
+                    <div className={`w-10 h-10 ${config.bg} rounded-lg flex items-center justify-center shrink-0`}>
+                      <Icon size={18} className={config.color} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-bold text-slate-900">{config.label}</span>
+                        <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
+                          <Clock size={10} />
+                          {event.dateStr}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600">Event recorded</p>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
       )}
 
       {/* Patient List */}

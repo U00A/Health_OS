@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Pill, CheckCircle, ShieldCheck, AlertTriangle, Clock, Inbox } from "lucide-react";
-import { Card, Button, Chip, Spinner } from "@heroui/react";
+import { Pill, CheckCircle, ShieldCheck, AlertTriangle, Clock, Inbox, Ban, AlertCircle, Info } from "lucide-react";
+import { Card, Button, Chip, Spinner, Modal, ModalHeader, ModalBody, ModalFooter, TextArea } from "@heroui/react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
+import { checkAllInteractions } from "@/lib/drugInteractions";
 
 export default function PharmacyInterface() {
   const betterAuthId = useBetterAuthId();
@@ -14,6 +15,8 @@ export default function PharmacyInterface() {
   const dispenseMutation = useMutation(api.dispenseRecords.dispense);
   const [verified, setVerified] = useState<Record<string, Set<number>>>({});
   const [dispensing, setDispensing] = useState<string | null>(null);
+  const [blockedRx, setBlockedRx] = useState<string | null>(null);
+  const [blockReason, setBlockReason] = useState("");
 
   const toggleVerify = (pid: string, idx: number) => {
     setVerified((prev) => {
@@ -26,6 +29,11 @@ export default function PharmacyInterface() {
   };
 
   const allVerified = (pid: string, count: number) => (verified[pid]?.size || 0) === count;
+
+  // Check drug interactions for a prescription
+  const getInteractions = (medications: { name: string; dose: string; frequency: string; duration: string }[]) => {
+    return checkAllInteractions(medications);
+  };
 
   const handleDispense = async (pid: string) => {
     if (!betterAuthId) return;
@@ -108,12 +116,71 @@ export default function PharmacyInterface() {
                   );
                 })}
               </ul>
-              <Button onPress={() => handleDispense(p._id)}
-                isDisabled={!allVerified(p._id, p.medications.length) || dispensing === p._id}
-                className={`w-full h-14 font-bold text-base rounded-xl shadow-xl transition-transform ${allVerified(p._id, p.medications.length) ? "bg-slate-900 text-white hover:scale-[1.01]" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"}`}>
-                <ShieldCheck size={20} className={allVerified(p._id, p.medications.length) ? "text-emerald-400" : ""} />
-                {dispensing === p._id ? "Processing..." : allVerified(p._id, p.medications.length) ? "Acknowledge & Dispense" : `Verify all ${p.medications.length} lines`}
-              </Button>
+              {/* Drug Interaction Check */}
+              {(() => {
+                const interactions = getInteractions(p.medications);
+                const hasSevere = interactions.some(i => i.severity === "severe");
+                const hasModerate = interactions.some(i => i.severity === "moderate");
+                const hasMild = interactions.some(i => i.severity === "mild");
+
+                return (
+                  <>
+                    {hasSevere && (
+                      <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ban size={16} className="text-red-600" />
+                          <span className="font-bold text-red-700 text-sm">SEVERE INTERACTION DETECTED</span>
+                        </div>
+                        {interactions.filter(i => i.severity === "severe").map((interaction, idx) => (
+                          <p key={idx} className="text-xs text-red-600 mb-1">
+                            {interaction.drug1} + {interaction.drug2}: {interaction.description}
+                          </p>
+                        ))}
+                        <p className="text-xs text-red-500 font-bold mt-2">Dispensing blocked. Contact prescribing doctor.</p>
+                      </div>
+                    )}
+                    {hasModerate && !hasSevere && (
+                      <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle size={16} className="text-amber-600" />
+                          <span className="font-bold text-amber-700 text-sm">MODERATE INTERACTION</span>
+                        </div>
+                        {interactions.filter(i => i.severity === "moderate").map((interaction, idx) => (
+                          <p key={idx} className="text-xs text-amber-600 mb-1">
+                            {interaction.drug1} + {interaction.drug2}: {interaction.description}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {hasMild && !hasModerate && !hasSevere && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Info size={14} className="text-blue-600" />
+                          <span className="font-bold text-blue-700 text-xs">MILD INTERACTION</span>
+                        </div>
+                        {interactions.filter(i => i.severity === "mild").map((interaction, idx) => (
+                          <p key={idx} className="text-[10px] text-blue-600">
+                            {interaction.drug1} + {interaction.drug2}: {interaction.description}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    <Button onPress={() => handleDispense(p._id)}
+                      isDisabled={!allVerified(p._id, p.medications.length) || dispensing === p._id || hasSevere}
+                      className={`w-full h-14 font-bold text-base rounded-xl shadow-xl transition-transform ${
+                        hasSevere
+                          ? "bg-red-100 text-red-400 cursor-not-allowed shadow-none"
+                          : allVerified(p._id, p.medications.length)
+                          ? "bg-slate-900 text-white hover:scale-[1.01]"
+                          : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
+                      }`}>
+                      <ShieldCheck size={20} className={allVerified(p._id, p.medications.length) && !hasSevere ? "text-emerald-400" : ""} />
+                      {hasSevere ? "BLOCKED — Severe Interaction" : dispensing === p._id ? "Processing..." : allVerified(p._id, p.medications.length) ? "Acknowledge & Dispense" : `Verify all ${p.medications.length} lines`}
+                    </Button>
+                  </>
+                );
+              })()}
             </div>
           </Card>
         ))}

@@ -17,6 +17,7 @@ import { CompteRenduForm } from "@/components/clinical/CompteRenduForm";
 import { LabOrderForm } from "@/components/clinical/LabOrderForm";
 import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
+import { SignalButton } from "@/components/clinical/SignalButton";
 
 type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register";
 
@@ -83,7 +84,7 @@ export default function PrivatePage() {
       )}
 
       {/* Action Buttons */}
-      {selectedPatient && activeView === "list" && (
+      {selectedPatient && activeView === "list" && betterAuthId && (
         <div className="flex gap-3 flex-wrap">
           <Button className="font-bold bg-indigo-600 text-white shadow-md shadow-indigo-200" onPress={() => setActiveView("compte_rendu")}>
             <FileText size={14} /> Write Compte Rendu
@@ -94,6 +95,7 @@ export default function PrivatePage() {
           <Button className="font-bold bg-violet-600 text-white shadow-md shadow-violet-200" onPress={() => setActiveView("lab_order")}>
             <Beaker size={14} /> Order Lab
           </Button>
+          <SignalButton patientId={selectedPatient._id as Id<"patients">} doctorBetterAuthId={betterAuthId} />
         </div>
       )}
 

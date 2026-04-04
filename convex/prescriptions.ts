@@ -30,7 +30,7 @@ export const create = mutation({
       }
     }
 
-    return await ctx.db.insert("prescriptions", {
+    const prescriptionId = await ctx.db.insert("prescriptions", {
       patient_id: args.patient_id,
       doctor_id: user._id,
       issued_at: Date.now(),
@@ -40,6 +40,25 @@ export const create = mutation({
         verified: false,
       })),
     });
+
+    // NOTIFICATION: Alert the patient (Section 9.3)
+    if (patient.user_id) {
+      const patientUser = await ctx.db.get(patient.user_id);
+      if (patientUser) {
+        await ctx.db.insert("notifications", {
+          recipient_id: patientUser._id,
+          sender_id: user._id,
+          patient_id: args.patient_id,
+          notification_type: "prescription_written",
+          title: "New Prescription",
+          message: `${user.name || "Your Doctor"} has prescribed ${args.medications.length} medication(s) for you.`,
+          created_at: Date.now(),
+          is_read: false,
+        });
+      }
+    }
+
+    return prescriptionId;
   },
 });
 

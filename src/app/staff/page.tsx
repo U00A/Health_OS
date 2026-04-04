@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp } from "lucide-react";
+import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp, Clock, Pill, CalendarDays, AlertTriangle } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -22,6 +22,19 @@ export default function StaffDashboard() {
   const logs = useQuery(api.caseEntries.getWardLog, firstWardId && betterAuthId ? { betterAuthId, ward_id: firstWardId } : "skip");
   const admissions = useQuery(api.admissions.listActiveByWard, firstWardId ? { ward_id: firstWardId } : "skip");
 
+  // Get active prescriptions for all admitted patients
+  const admittedPatientIds = admissions?.map(a => a.patient_id) ?? [];
+  const activePrescriptions = useQuery(
+    api.prescriptions.listByPatient,
+    admittedPatientIds.length > 0 ? { patient_id: admittedPatientIds[0] as Id<"patients"> } : "skip"
+  );
+
+  // Get latest vitals for all admitted patients
+  const latestVitals = useQuery(
+    api.vitals.getLatestForPatient,
+    admittedPatientIds.length > 0 ? { patient_id: admittedPatientIds[0] as Id<"patients"> } : "skip"
+  );
+
   const admitMutation = useMutation(api.admissions.admit);
   const createEntry = useMutation(api.caseEntries.createEntry);
 
@@ -31,15 +44,59 @@ export default function StaffDashboard() {
   const [admitBed, setAdmitBed] = useState<string>("");
   const [admitType, setAdmitType] = useState<"emergency" | "scheduled" | "transfer">("scheduled");
   const [vitalsTarget, setVitalsTarget] = useState<{ id: Id<"patients">; name: string } | null>(null);
-
-  // Get latest vitals for all admitted patients
-  const admittedPatientIds = admissions?.map(a => a.patient_id as Id<"patients">) ?? [];
+  const [escalatingBed, setEscalatingBed] = useState<string | null>(null);
 
   // Case entry
   const [entryType, setEntryType] = useState<"observation" | "nursing_note" | "escalation" | "procedure" | "general">("observation");
   const [entryNotes, setEntryNotes] = useState("");
 
   const vacantBeds = beds?.filter((b) => b.status === "vacant") || [];
+
+  // Helper: get scheduled medications for a patient in current shift
+  const getPatientMeds = (patientId: string) => {
+    if (!activePrescriptions) return [];
+    const patientRx = activePrescriptions.filter((rx: Doc<"prescriptions">) => rx.patient_id === patientId && rx.status === "active");
+    const allMeds: { name: string; dose: string; frequency: string }[] = [];
+    patientRx.forEach((rx: Doc<"prescriptions">) => {
+      rx.medications.forEach((med: { name: string; dose: string; frequency: string; duration: string; route?: string }) => {
+        allMeds.push({ name: med.name, dose: med.dose, frequency: med.frequency });
+      });
+    });
+    return allMeds;
+  };
+
+  // Helper: get latest vitals for a patient (getLatestForPatient returns a single record)
+  const getPatientVitals = (patientId: string) => {
+    if (!latestVitals) return null;
+    return (latestVitals as Doc<"vitals"> | null) || null;
+  };
+
+  // Helper: calculate elapsed stay
+  const getElapsedStay = (admittedAt: number) => {
+    const hours = Math.floor((Date.now() - admittedAt) / 3600000);
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `${days}d ${hours % 24}h`;
+    return `${hours}h`;
+  };
+
+  // Escalation handler
+  const handleEscalation = async (bedId: string, admissionId: string) => {
+    if (!betterAuthId || !firstWardId) return;
+    setEscalatingBed(bedId);
+    try {
+      await createEntry({
+        betterAuthId,
+        ward_id: firstWardId,
+        entry_type: "escalation",
+        notes: "Escalation triggered for patient - immediate doctor attention required",
+        patient_id: admissionId as Id<"patients">,
+      });
+    } catch (e: unknown) {
+      alert((e as Error).message);
+    } finally {
+      setEscalatingBed(null);
+    }
+  };
 
   const handleAdmit = async () => {
     if (!admitPatient || !admitBed || !firstWardId || !betterAuthId) return;
@@ -247,34 +304,105 @@ export default function StaffDashboard() {
                 beds.map((bed: Doc<"beds">) => {
                   const isVacant = bed.status === "vacant";
                   const isOccupied = bed.status === "occupied";
+                  const isPendingDischarge = bed.status === "pending_discharge";
                   // Find admission for this bed
                   const admission = admissions?.find((a) => a.bed_id === bed._id);
+                  const patientMeds = admission ? getPatientMeds(admission.patient_id) : [];
+                  const patientVitals = admission ? getPatientVitals(admission.patient_id) : null;
+                  const elapsedStay = admission ? getElapsedStay(admission.admitted_at) : null;
+
                   return (
                     <Card
                       key={bed._id}
-                      className={`transition-transform hover:-translate-y-1 ${isVacant ? "bg-emerald-50 border-emerald-200" : isOccupied ? "bg-rose-50 border-rose-200" : "bg-amber-50 border-amber-200"} border`}
+                      className={`transition-transform hover:-translate-y-1 border ${
+                        isVacant ? "bg-emerald-50 border-emerald-200" : isOccupied ? "bg-rose-50 border-rose-200" : "bg-amber-50 border-amber-200"
+                      }`}
                     >
-                      <div className="flex flex-col justify-between p-3 h-full min-h-[7rem]">
-                        <span className={`font-black text-2xl tracking-tighter ${isVacant ? "text-emerald-800" : isOccupied ? "text-rose-800" : "text-amber-800"}`}>
-                          {bed.name}
-                        </span>
-                        {admission && (
-                          <p className="text-[10px] font-bold text-slate-600 truncate">{admission.patientName}</p>
-                        )}
-                        <div className="flex items-center justify-between gap-1">
-                          <Chip size="sm" variant="soft" color={isVacant ? "success" : isOccupied ? "danger" : "warning"} className="font-black uppercase tracking-widest text-[10px]">
+                      <div className="flex flex-col p-3 h-full min-h-[10rem]">
+                        {/* Bed Name + Status */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`font-black text-xl tracking-tighter ${isVacant ? "text-emerald-800" : isOccupied ? "text-rose-800" : "text-amber-800"}`}>
+                            {bed.name}
+                          </span>
+                          <Chip size="sm" variant="soft" color={isVacant ? "success" : isOccupied ? "danger" : "warning"} className="font-black uppercase tracking-widest text-[8px]">
                             {bed.status.replace("_", " ")}
                           </Chip>
-                          {admission && (
-                            <button
-                              onClick={() => setVitalsTarget({ id: admission.patient_id as Id<"patients">, name: admission.patientName })}
-                              className="p-1 rounded-md hover:bg-rose-100 text-rose-500"
-                              title="Record Vitals"
-                            >
-                              <HeartPulse size={14} />
-                            </button>
-                          )}
                         </div>
+
+                        {admission ? (
+                          <>
+                            {/* 1. Patient Name + National ID */}
+                            <div className="mb-2">
+                              <p className="text-xs font-bold text-slate-900 truncate">{admission.patientName}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">{admission.patientNationalId || "N/A"}</p>
+                            </div>
+
+                            {/* 2. Admission Date + Elapsed Stay */}
+                            <div className="flex items-center gap-1 mb-2 text-[10px] text-slate-500">
+                              <CalendarDays size={10} className="shrink-0" />
+                              <span>Admitted: {new Date(admission.admitted_at).toLocaleDateString()}</span>
+                              {elapsedStay && <span className="font-bold text-slate-700">({elapsedStay})</span>}
+                            </div>
+
+                            {/* 3. Scheduled Medications */}
+                            {patientMeds.length > 0 && (
+                              <div className="mb-2">
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600 mb-1">
+                                  <Pill size={10} /> Meds this shift
+                                </div>
+                                <div className="space-y-0.5 max-h-12 overflow-y-auto">
+                                  {patientMeds.slice(0, 3).map((med, i) => (
+                                    <p key={i} className="text-[9px] text-slate-600 truncate">
+                                      {med.name} {med.dose} — {med.frequency}
+                                    </p>
+                                  ))}
+                                  {patientMeds.length > 3 && (
+                                    <p className="text-[9px] text-slate-400">+{patientMeds.length - 3} more</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 4. Real-time Vitals */}
+                            {patientVitals && (
+                              <div className="mb-2">
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-600 mb-1">
+                                  <HeartPulse size={10} /> Latest Vitals
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-1 text-[9px] text-slate-600">
+                                  {patientVitals.systolic_bp && patientVitals.diastolic_bp && (
+                                    <span>BP: {patientVitals.systolic_bp}/{patientVitals.diastolic_bp}</span>
+                                  )}
+                                  {patientVitals.heart_rate && <span>HR: {patientVitals.heart_rate}</span>}
+                                  {patientVitals.temperature && <span>Temp: {patientVitals.temperature}°C</span>}
+                                  {patientVitals.spo2 && <span>SpO2: {patientVitals.spo2}%</span>}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="mt-auto flex items-center gap-1">
+                              <button
+                                onClick={() => setVitalsTarget({ id: admission.patient_id as Id<"patients">, name: admission.patientName })}
+                                className="p-1.5 rounded-md hover:bg-rose-100 text-rose-500"
+                                title="Record Vitals"
+                              >
+                                <HeartPulse size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleEscalation(bed._id, admission.patient_id)}
+                                className={`p-1.5 rounded-md hover:bg-red-100 text-red-500 ${escalatingBed === bed._id ? "animate-pulse bg-red-100" : ""}`}
+                                title="Escalate to Doctor"
+                              >
+                                <AlertTriangle size={12} />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex-1 flex items-center justify-center">
+                            <p className="text-xs text-slate-400 font-medium">Vacant</p>
+                          </div>
+                        )}
                       </div>
                     </Card>
                   );

@@ -12,6 +12,7 @@ import {
   ChevronDown,
   LogOut,
 } from "lucide-react";
+import { BellNotification } from "@/components/BellNotification";
 import { useNavigation, useSectionInfo, getDefaultBackRoute } from "@/hooks/useNavigation";
 import { authClient } from "@/lib/auth-client";
 
@@ -173,8 +174,9 @@ export function GlobalNavigationHeader({
           })}
         </nav>
 
-        {/* Right: Search + Sections + User */}
+        {/* Right: Notifications + Search + Sections + User */}
         <div className="flex items-center gap-2">
+          <BellNotification />
           {showSearch && (
             <button
               type="button"

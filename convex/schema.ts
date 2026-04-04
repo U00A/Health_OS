@@ -18,8 +18,18 @@ export default defineSchema({
       v.literal("medical_staff"),
       v.literal("pharmacy"),
       v.literal("laboratory"),
-      v.literal("patient")
+      v.literal("patient"),
+      v.literal("administration")  // NEW in v2.0
     )),
+    // NEW in v2.0: Private doctor professional details
+    clinic_name: v.optional(v.string()),
+    clinic_address: v.optional(v.string()),
+    professional_id: v.optional(v.string()),
+    contact_details: v.optional(v.string()),
+    // NEW in v2.0: Inactive patient flag
+    is_inactive: v.optional(v.boolean()),
+    // NEW in v2.0: Last seen date for inactive tracking
+    last_seen_at: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"])
@@ -58,6 +68,16 @@ export default defineSchema({
     wilaya: v.optional(v.string()),
     commune: v.optional(v.string()),
     allergies: v.optional(v.array(v.string())),
+    // NEW in v2.0: Biometric reference for fingerprint gating
+    biometric_reference: v.optional(v.string()),
+    // NEW in v2.0: Emergency contact for admin role
+    emergency_contact: v.optional(v.string()),
+    // NEW in v2.0: Enrollment status
+    enrollment_status: v.optional(v.union(
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("archived")
+    )),
   })
     .index("by_national_id", ["national_id"])
     .index("by_user_id", ["user_id"]),
@@ -74,6 +94,16 @@ export default defineSchema({
     doctor_id: v.id("users"),
     patient_id: v.id("patients"),
     active: v.boolean(),
+    // NEW in v2.0: Enrollment invitation tracking
+    invitation_status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+      v.literal("expired")
+    )),
+    invitation_sent_at: v.optional(v.number()),
+    // NEW in v2.0: Last consultation date for inactive tracking
+    last_consultation_at: v.optional(v.number()),
   })
     .index("by_doctor", ["doctor_id"])
     .index("by_patient", ["patient_id"]),
@@ -88,6 +118,10 @@ export default defineSchema({
     follow_up: v.optional(v.string()),
     content_html: v.string(),
     amendment_of: v.optional(v.id("compte_rendus")),
+    // NEW in v2.0: Template support
+    template_id: v.optional(v.string()),
+    // NEW in v2.0: Speciality context
+    speciality_id: v.optional(v.id("specialities")),
   })
     .index("by_patient", ["patient_id"])
     .index("by_doctor", ["doctor_id"]),
@@ -110,6 +144,17 @@ export default defineSchema({
       route: v.optional(v.string()),
       verified: v.optional(v.boolean()),
     })),
+    // NEW in v2.0: Expiry date for prescription expiry warning
+    expiry_date: v.optional(v.number()),
+    // NEW in v2.0: Controlled substance flag
+    is_controlled_substance: v.optional(v.boolean()),
+    // NEW in v2.0: Controlled substance reason field
+    controlled_reason: v.optional(v.string()),
+    // NEW in v2.0: Partial dispense tracking
+    partially_dispensed_items: v.optional(v.array(v.object({
+      name: v.string(),
+      restock_date: v.optional(v.number()),
+    }))),
   })
     .index("by_patient", ["patient_id"])
     .index("by_doctor", ["doctor_id"])
@@ -124,6 +169,10 @@ export default defineSchema({
     urgency: v.union(v.literal("routine"), v.literal("urgent"), v.literal("stat")),
     status: v.union(v.literal("pending"), v.literal("in_progress"), v.literal("completed")),
     clinical_notes: v.optional(v.string()),
+    // NEW in v2.0: Turnaround tracking
+    received_at: v.optional(v.number()),
+    // NEW in v2.0: Critical value escalation tracking
+    critical_escalated: v.optional(v.boolean()),
   })
     .index("by_patient", ["patient_id"])
     .index("by_lab", ["lab_id"])
@@ -139,16 +188,25 @@ export default defineSchema({
     pdf_storage_id: v.optional(v.id("_storage")),
     is_amendment: v.optional(v.boolean()),
     amends_result_id: v.optional(v.id("lab_results")),
+    // NEW in v2.0: Critical values tracking
+    critical_values: v.optional(v.array(v.object({
+      field: v.string(),
+      value: v.number(),
+      critical_threshold: v.number(),
+    }))),
   })
     .index("by_order", ["order_id"])
     .index("by_patient", ["patient_id"]),
 
   imaging_files: defineTable({
     patient_id: v.id("patients"),
+    doctor_id: v.optional(v.id("users")),
     uploaded_at: v.number(),
     modality: v.string(),
     body_part: v.string(),
     storage_id: v.id("_storage"),
+    // NEW in v2.0: Report text
+    report_text: v.optional(v.string()),
   }).index("by_patient", ["patient_id"]),
 
   admissions: defineTable({
@@ -181,6 +239,14 @@ export default defineSchema({
     spo2: v.optional(v.number()),
     respiratory_rate: v.optional(v.number()),
     weight: v.optional(v.number()),
+    // NEW in v2.0: Blood glucose for diabetic monitoring
+    blood_glucose: v.optional(v.number()),
+    // NEW in v2.0: Role of person recording
+    recorded_by_role: v.optional(v.union(
+      v.literal("medecin_etat"),
+      v.literal("private_doctor"),
+      v.literal("medical_staff")
+    )),
   })
     .index("by_patient", ["patient_id"])
     .index("by_recorded_at", ["recorded_at"]),
@@ -199,10 +265,21 @@ export default defineSchema({
       v.literal("observation"),
       v.literal("nursing_note"),
       v.literal("procedure"),
-      v.literal("general")
+      v.literal("general"),
+      // NEW in v2.0: Identity gate logging
+      v.literal("identity_gate_opened"),
+      // NEW in v2.0: Shift handover
+      v.literal("shift_handover"),
+      // NEW in v2.0: Supply request
+      v.literal("supply_request"),
+      // NEW in v2.0: Escalation acknowledgement
+      v.literal("escalation_acknowledged")
     ),
     notes: v.optional(v.string()),
     patient_id: v.optional(v.id("patients")),
+    // NEW in v2.0: For escalations, track acknowledgment
+    escalation_acknowledged_by: v.optional(v.id("users")),
+    escalation_acknowledged_at: v.optional(v.number()),
   })
     .index("by_actor", ["actor_id"])
     .index("by_ward", ["ward_id"])
@@ -213,6 +290,15 @@ export default defineSchema({
     pharmacist_id: v.id("users"),
     dispensed_at: v.number(),
     notes: v.optional(v.string()),
+    // NEW in v2.0: Partial dispense tracking
+    is_partial: v.optional(v.boolean()),
+    dispensed_items: v.optional(v.array(v.object({
+      name: v.string(),
+      quantity_dispensed: v.number(),
+    }))),
+    // NEW in v2.0: Controlled substance double-log
+    is_controlled_substance: v.optional(v.boolean()),
+    controlled_reason: v.optional(v.string()),
   }).index("by_prescription", ["prescription_id"]),
 
   patient_documents: defineTable({
@@ -241,4 +327,138 @@ export default defineSchema({
     .index("by_patient", ["patient_id"])
     .index("by_type", ["document_type"])
     .index("by_status", ["status"]),
+
+  // NEW in v2.0: Notifications table for bell alerts
+  notifications: defineTable({
+    recipient_id: v.id("users"),
+    sender_id: v.optional(v.id("users")),
+    patient_id: v.optional(v.id("patients")),
+    notification_type: v.union(
+      v.literal("lab_result_arrived"),
+      v.literal("prescription_written"),
+      v.literal("signal_flag"),
+      v.literal("escalation"),
+      v.literal("discharge"),
+      v.literal("appointment_reminder")
+    ),
+    title: v.string(),
+    message: v.string(),
+    is_read: v.optional(v.boolean()),
+    created_at: v.number(),
+    // For escalation - requires explicit ack
+    requires_acknowledgment: v.optional(v.boolean()),
+    acknowledged_at: v.optional(v.number()),
+  })
+    .index("by_recipient", ["recipient_id"])
+    .index("by_patient", ["patient_id"])
+    .index("by_is_read", ["is_read"]),
+
+  // NEW in v2.0: Signal flags from doctors during patient-present sessions
+  signal_flags: defineTable({
+    patient_id: v.id("patients"),
+    doctor_id: v.id("users"),
+    flag_type: v.union(
+      v.literal("alert"),
+      v.literal("recommendation"),
+      v.literal("observation")
+    ),
+    note: v.string(),
+    created_at: v.number(),
+    // Anonymised for display to other doctors
+  })
+    .index("by_patient", ["patient_id"])
+    .index("by_doctor", ["doctor_id"]),
+
+  // NEW in v2.0: Billing records for Administration role
+  billing_records: defineTable({
+    patient_id: v.id("patients"),
+    admission_id: v.optional(v.id("admissions")),
+    billing_date: v.number(),
+    service_category: v.union(
+      v.literal("consultation"),
+      v.literal("lab"),
+      v.literal("imaging"),
+      v.literal("bed_day"),
+      v.literal("pharmacy"),
+      v.literal("other")
+    ),
+    amount: v.number(),
+    payment_status: v.union(
+      v.literal("paid"),
+      v.literal("pending"),
+      v.literal("waived")
+    ),
+    created_by: v.id("users"),
+  })
+    .index("by_patient", ["patient_id"])
+    .index("by_admission", ["admission_id"])
+    .index("by_payment_status", ["payment_status"]),
+
+  // NEW in v2.0: Consultation templates for doctors
+  consultation_templates: defineTable({
+    doctor_id: v.id("users"),
+    name: v.string(),
+    speciality: v.optional(v.string()),
+    condition_type: v.optional(v.string()),
+    template_content: v.string(),
+    icd_code: v.optional(v.string()),
+    default_treatment: v.optional(v.string()),
+  })
+    .index("by_doctor", ["doctor_id"]),
+
+  // NEW in v2.0: Biometric session tracking
+  biometric_sessions: defineTable({
+    patient_id: v.id("patients"),
+    professional_id: v.id("users"),
+    session_token: v.string(),
+    created_at: v.number(),
+    expires_at: v.number(),
+    is_valid: v.boolean(),
+    // Audit log entry reference
+    case_entry_id: v.optional(v.id("case_entries")),
+  })
+    .index("by_patient", ["patient_id"])
+    .index("by_professional", ["professional_id"])
+    .index("by_token", ["session_token"]),
+
+  // NEW in v2.0: Supply request log for staff
+  supply_requests: defineTable({
+    ward_id: v.id("wards"),
+    requested_by: v.id("users"),
+    item_name: v.string(),
+    quantity: v.number(),
+    urgency: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    status: v.union(v.literal("pending"), v.literal("fulfilled"), v.literal("rejected")),
+    created_at: v.number(),
+    fulfilled_at: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_ward", ["ward_id"])
+    .index("by_status", ["status"]),
+
+  // NEW in v2.0: Shift handover notes
+  shift_handovers: defineTable({
+    ward_id: v.id("wards"),
+    outgoing_doctor_id: v.id("users"),
+    incoming_doctor_id: v.optional(v.id("users")),
+    patient_id: v.optional(v.id("patients")),
+    notes: v.string(),
+    created_at: v.number(),
+    is_read: v.optional(v.boolean()),
+  })
+    .index("by_ward", ["ward_id"])
+    .index("by_patient", ["patient_id"]),
+
+  // NEW in v2.0: Referrals
+  referrals: defineTable({
+    patient_id: v.id("patients"),
+    from_doctor_id: v.id("users"),
+    to_speciality_id: v.optional(v.id("specialities")),
+    to_doctor_id: v.optional(v.id("users")),
+    referral_letter: v.string(),
+    created_at: v.number(),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("completed")),
+  })
+    .index("by_patient", ["patient_id"])
+    .index("by_from_doctor", ["from_doctor_id"]),
 });
