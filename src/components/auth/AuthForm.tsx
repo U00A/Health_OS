@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useRef, useEffect } from "react";
+import { useState, Suspense, useRef, useEffect, useCallback } from "react";
 import { ChevronDown } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -35,6 +35,20 @@ function AuthFormContent() {
       containerRef.current.classList.add("right-panel-active");
     }
   }, []); // Only run on mount
+
+  // Listen for demo-fill events
+  const handleDemoFill = useCallback((e: Event) => {
+    const detail = (e as CustomEvent).detail as { email: string; password: string };
+    setEmail(detail.email);
+    setPassword(detail.password);
+    // Switch to sign-in panel when demo is selected
+    containerRef.current?.classList.remove("right-panel-active");
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("demo-fill", handleDemoFill);
+    return () => window.removeEventListener("demo-fill", handleDemoFill);
+  }, [handleDemoFill]);
 
   const handleSignUp = () => {
     containerRef.current?.classList.add("right-panel-active");

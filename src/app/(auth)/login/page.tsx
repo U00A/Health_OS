@@ -1,10 +1,15 @@
 "use client";
 
+import { useCallback } from "react";
 import { Activity, ShieldCheck } from "lucide-react";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { DemoCredentials } from "@/components/auth/DemoCredentials";
 
 export default function LoginPage() {
+  const handleDemoSelect = useCallback((email: string, password: string) => {
+    window.dispatchEvent(new CustomEvent("demo-fill", { detail: { email, password } }));
+  }, []);
+
   return (
     <div className="flex min-h-screen relative overflow-hidden" style={{ fontFamily: "'Montserrat', sans-serif" }}>
       {/* Animated Background */}
@@ -12,7 +17,7 @@ export default function LoginPage() {
         <div
           className="absolute inset-0 opacity-80"
           style={{
-            background: "linear-gradient(45deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #06b6d4 100%)",
           }}
         />
         {/* Floating particles */}
@@ -72,7 +77,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-12 xl:px-20 z-10">
         <AuthForm />
         <div className="mt-8 w-full max-w-[768px]">
-          <DemoCredentials onSelect={() => {}} />
+          <DemoCredentials onSelect={handleDemoSelect} />
         </div>
       </div>
     </div>
