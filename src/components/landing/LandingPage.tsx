@@ -16,13 +16,17 @@ import {
   Lock,
   Zap,
   ChevronRight,
-  Sparkles,
   Users,
   Building2,
+  Globe,
+  Database
 } from "lucide-react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import dynamic from 'next/dynamic';
+
+const InteractiveBackground = dynamic(() => import('./InteractiveBackground'), { ssr: false });
 
 /* ════════════════════════════════════════════════
    Animated Counter Hook
@@ -64,71 +68,68 @@ function useCounter(end: number, duration = 2000, startOnView = true) {
 const roles = [
   {
     title: "Doctors",
-    description: "Comprehensive patient management with rich-text clinical reports, real-time history, and diagnostic support.",
+    description: "Rich-text clinical reports, AI-assisted diagnostics, and real-time history.",
     icon: Stethoscope,
-    gradient: "from-blue-600 to-blue-700",
-    shadow: "shadow-blue-200",
+    gradient: "from-blue-500 to-indigo-600",
+    shadow: "shadow-blue-900/50",
     link: "/doctor",
   },
   {
     title: "Medical Staff",
-    description: "Real-time bed grid management, admission flows, and shift coordination for hospital operations.",
+    description: "Bed grid management and real-time admission tracking flows.",
     icon: BedDouble,
-    gradient: "from-sky-500 to-blue-600",
-    shadow: "shadow-sky-200",
+    gradient: "from-sky-500 to-cyan-600",
+    shadow: "shadow-sky-900/50",
     link: "/staff",
   },
   {
     title: "Pharmacists",
-    description: "Automated prescription verification and secure, immutable dispense tracking system.",
+    description: "Immutable prescription tracking with automated interaction verification.",
     icon: Pill,
-    gradient: "from-emerald-500 to-emerald-600",
-    shadow: "shadow-emerald-200",
+    gradient: "from-emerald-500 to-teal-600",
+    shadow: "shadow-emerald-900/50",
     link: "/pharmacy",
   },
   {
     title: "Lab Techs",
-    description: "Integrated order queue, structured analysis pipelines, and result upload workflows.",
+    description: "Automated analysis pipelines and secure, structured result uploads.",
     icon: Microscope,
-    gradient: "from-violet-500 to-indigo-600",
-    shadow: "shadow-violet-200",
+    gradient: "from-violet-500 to-purple-600",
+    shadow: "shadow-violet-900/50",
     link: "/lab",
   },
   {
     title: "Patients",
-    description: "Personal health records portal with secure access to prescriptions, lab results, and clinical history.",
+    description: "Personal health hub with instant access to your clinical history and lab results.",
     icon: UserRound,
-    gradient: "from-slate-600 to-slate-800",
-    shadow: "shadow-slate-200",
+    gradient: "from-slate-400 to-slate-600",
+    shadow: "shadow-slate-800/50",
     link: "/patient-portal",
   },
   {
     title: "Private Care",
-    description: "Isolated high-security workspace for private practitioners with dedicated patient management.",
+    description: "Isolated, high-security enclave for private practitioners.",
     icon: ShieldCheck,
-    gradient: "from-teal-500 to-cyan-600",
-    shadow: "shadow-teal-200",
+    gradient: "from-fuchsia-500 to-pink-600",
+    shadow: "shadow-fuchsia-900/50",
     link: "/private",
   },
 ];
 
-// We will dynamically construct these inside the component using real data
-// but we keep the structure available in case needed.
-
 const features = [
   {
-    title: "Real-Time Sync",
-    description: "Every change propagates instantly across all connected clinical interfaces via WebSocket.",
+    title: "Global Reactivity",
+    description: "Every change synchronizes instantly across all institutional interfaces.",
     icon: Zap,
   },
   {
-    title: "Immutable Audit Trail",
-    description: "Cryptographically signed append-only logs ensure medical history can never be altered.",
-    icon: ShieldCheck,
+    title: "Immutable Architecture",
+    description: "Cryptographic logging ensures records can never fade or be manipulated.",
+    icon: Database,
   },
   {
-    title: "Role-Gated Access",
-    description: "Six specialized interfaces with strict data isolation between hospital departments.",
+    title: "Zero-Trust Isolation",
+    description: "Six strict role horizons preventing cross-contamination of sensitive data.",
     icon: Lock,
   },
 ];
@@ -140,17 +141,17 @@ const stagger = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
   },
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const } },
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
 /* ════════════════════════════════════════════════
-   Component
+   Components
    ════════════════════════════════════════════════ */
 function StatCard({ stat }: { stat: { label: string; value: number; prefix?: string; suffix?: string; icon: React.ComponentType<{ className?: string }> } }) {
   const { value: count, ref: cardRef } = useCounter(stat.value, 2000);
@@ -159,15 +160,15 @@ function StatCard({ stat }: { stat: { label: string; value: number; prefix?: str
     <div ref={cardRef} key={stat.label}>
       <motion.div
         variants={fadeUp}
-        className="bg-white rounded-2xl lg:rounded-3xl p-6 lg:p-8 border border-slate-100 text-center hover:shadow-xl hover:shadow-slate-100 transition-all hover:-translate-y-1 group"
+        className="bg-slate-900/40 backdrop-blur-md rounded-2xl p-6 lg:p-8 border border-white/5 text-center hover:bg-slate-800/60 transition-all hover:-translate-y-1 group hover:border-blue-500/30 hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] duration-500"
       >
-      <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform border border-blue-100/50">
-        <stat.icon className="w-5 h-5 text-blue-600" />
+      <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform border border-blue-500/20">
+        <stat.icon className="w-5 h-5 text-blue-400 group-hover:text-blue-300 shadow-blue-500" />
       </div>
-      <div className="text-3xl lg:text-4xl font-black text-slate-900 mb-2 tracking-tight font-mono">
+      <div className="text-3xl font-black text-white mb-2 tracking-tight font-mono">
         {stat.prefix}{displayValue}{stat.suffix}
       </div>
-      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
         {stat.label}
       </div>
       </motion.div>
@@ -179,10 +180,10 @@ export default function LandingPage() {
   const liveStats = useQuery(api.stats.getLandingStats);
   
   const dynamicStats = [
-    { label: "Active Users", value: liveStats?.totalUsers || 0, icon: Users },
-    { label: "Registered Patients", value: liveStats?.totalPatients || 0, icon: UserRound },
-    { label: "Partner Hospitals", value: liveStats?.totalHospitals || 0, icon: Building2 },
-    { label: "Active Admissions", value: liveStats?.activeAdmissions || 0, icon: BedDouble },
+    { label: "Active Nodes", value: liveStats?.totalUsers || 0, icon: Users },
+    { label: "Secured Records", value: liveStats?.totalPatients || 0, icon: UserRound },
+    { label: "Institutions", value: liveStats?.totalHospitals || 0, icon: Building2 },
+    { label: "Live Admissions", value: liveStats?.activeAdmissions || 0, icon: BedDouble },
   ];
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -190,324 +191,186 @@ export default function LandingPage() {
     target: heroRef,
     offset: ["start start", "end start"],
   });
+  
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const mockupY = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const mockupScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const mockupScale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
+  const mockupRotateX = useTransform(scrollYProgress, [0, 1], [5, 15]);
 
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
+    const handler = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
   return (
-    <div className="flex flex-col w-full bg-white text-slate-900 selection:bg-blue-100">
+    <div className="flex flex-col w-full bg-[#020617] text-slate-200 selection:bg-blue-500/30 overflow-hidden font-sans">
+      
+      {/* ═══ ABSOLUTE CANVAS BKG ═══ */}
+      <InteractiveBackground />
 
       {/* ═══ NAVBAR ═══ */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ${
         scrolled
-          ? "bg-white/80 backdrop-blur-xl shadow-sm shadow-slate-100 border-b border-slate-100"
-          : "bg-transparent"
+          ? "bg-[#020617]/80 backdrop-blur-2xl shadow-xl shadow-slate-900/50 border-b border-white/5 py-4"
+          : "bg-transparent py-6"
       }`}>
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50 group-hover:scale-105 transition-transform">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_-5px_rgba(37,99,235,0.6)] group-hover:shadow-[0_0_30px_-5px_rgba(37,99,235,0.8)] group-hover:scale-105 transition-all duration-500">
               <Activity className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight">Health<span className="text-blue-600">OS</span></span>
+            <span className="text-xl font-bold tracking-tight text-white">Health<span className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">OS</span></span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8 text-[13px] font-semibold text-slate-400 uppercase tracking-[0.15em]">
-            <a href="#solutions" className="hover:text-blue-600 transition-colors">Solutions</a>
-            <a href="#security" className="hover:text-blue-600 transition-colors">Security</a>
-            <a href="#platform" className="hover:text-blue-600 transition-colors">Platform</a>
+          <div className="hidden md:flex items-center gap-10 text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+            <a href="#ecosystem" className="hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">Ecosystem</a>
+            <a href="#architecture" className="hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all">Architecture</a>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link href="/login?flow=signIn" className="text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors hidden sm:block px-4 py-2">
-              Log In
+          <div className="flex items-center gap-4">
+            <Link href="/login?flow=signIn" className="text-[13px] font-bold text-slate-300 hover:text-white transition-colors hidden sm:block px-4">
+              SIGN IN
             </Link>
             <Link
               href="/login?flow=signUp"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm px-6 py-2.5 rounded-full hover:shadow-lg hover:shadow-blue-200 hover:-translate-y-0.5 transition-all"
+              className="relative overflow-hidden group bg-white text-slate-950 font-bold text-[13px] px-6 py-2.5 rounded-full hover:shadow-[0_0_30px_-5px_rgba(255,255,255,0.4)] transition-all duration-500"
             >
-              Get Started
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              GET STARTED
             </Link>
           </div>
         </div>
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <section ref={heroRef} id="platform" className="relative pt-40 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden min-h-screen flex items-center">
-        {/* Ambient Blurs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[30%] -right-[15%] w-[80%] h-[80%] rounded-full bg-blue-100/30 blur-[120px]" />
-          <div className="absolute bottom-[0%] -left-[20%] w-[60%] h-[60%] rounded-full bg-indigo-100/30 blur-[120px]" />
-          <div className="absolute top-[20%] left-[40%] w-[30%] h-[30%] rounded-full bg-violet-100/20 blur-[80px]" />
-        </div>
+      <section ref={heroRef} className="relative pt-40 pb-20 lg:pt-52 lg:pb-32 px-6 min-h-screen flex items-center perspective-1000">
+        
+        {/* Glow Effects */}
+        <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-20 items-center relative z-10 w-full">
-          {/* Left — Copy */}
-          <motion.div style={{ y: heroY, opacity: heroOpacity }}>
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10 w-full">
+          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="w-full flex flex-col items-center">
             <motion.div
               initial="hidden"
               animate="show"
               variants={stagger}
+              className="max-w-4xl flex flex-col items-center"
             >
-              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold tracking-widest uppercase mb-8 border border-blue-100">
-                <Sparkles className="w-3.5 h-3.5" />
-                Next-Gen Hospital Architecture
+              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-300 text-[11px] font-bold tracking-[0.25em] uppercase mb-8 backdrop-blur-md">
+                <Globe className="w-3.5 h-3.5 text-blue-400" />
+                The Protocol for Modern Healthcare
               </motion.div>
 
-              <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[0.92] mb-8 text-slate-900">
-                The OS for{" "}
-                <span className="text-gradient">Modern Medicine.</span>
+              <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl lg:text-8xl font-black tracking-tighter leading-[0.95] mb-8 text-white drop-shadow-2xl">
+                Operate at the <br className="hidden sm:block"/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-white drop-shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+                  Speed of Thought.
+                </span>
               </motion.h1>
 
-              <motion.p variants={fadeUp} className="text-lg lg:text-xl text-slate-500 max-w-lg mb-10 leading-relaxed font-medium">
-                Unified clinical workflows, real-time hospital synchronization, and immutable patient records built for the Algerian healthcare future.
+              <motion.p variants={fadeUp} className="text-lg lg:text-xl text-slate-400 max-w-2xl mb-12 leading-relaxed font-medium">
+                High-performance clinical infrastructure built for zero-latency operations, immutable record-keeping, and unified inter-departmental flows.
               </motion.p>
 
-              <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center gap-6">
                 <Link
                   href="/login?flow=signUp"
-                  className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold h-14 px-10 rounded-2xl shadow-xl shadow-blue-200/50 hover:shadow-2xl hover:shadow-blue-200 hover:-translate-y-1 transition-all flex items-center gap-3 text-base"
+                  className="group bg-blue-600 text-white font-bold h-14 px-10 rounded-2xl shadow-[0_0_30px_-5px_rgba(37,99,235,0.5)] hover:shadow-[0_0_40px_-5px_rgba(37,99,235,0.7)] hover:bg-blue-500 transition-all duration-300 flex items-center gap-3 text-sm tracking-wide"
                 >
-                  Start Your Registry
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  INITIALIZE PLATFORM
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
 
-                <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
-                  <div className="flex -space-x-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-10 h-10 rounded-full border-[3px] border-white bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-sm">
-                        <UserRound className="w-4 h-4 text-slate-400" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-xs font-bold text-slate-400 leading-tight">
-                    Trusted by<br /><span className="text-slate-900">500+ Institutions</span>
+                <div className="flex items-center gap-4 border border-white/10 bg-white/5 rounded-2xl h-14 px-6 backdrop-blur-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
+                    <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">System Online</span>
                   </div>
                 </div>
               </motion.div>
             </motion.div>
-          </motion.div>
 
-          {/* Right — Dashboard Mockup */}
-          <motion.div style={{ y: mockupY, scale: mockupScale }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const, delay: 0.3 }}
+            {/* Floating UI Mockup */}
+            <motion.div 
+              style={{ scale: mockupScale, rotateX: mockupRotateX }}
+              className="mt-20 w-full max-w-5xl mx-auto perspective-[2000px] transform-style-3d hidden sm:block"
             >
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-[2rem] lg:rounded-[3rem] p-4 lg:p-6 relative overflow-hidden shadow-2xl shadow-slate-200/50 border border-slate-200/50">
-                <div className="bg-white rounded-[1.5rem] lg:rounded-[2.5rem] shadow-sm p-6 lg:p-8 border border-slate-100 relative overflow-hidden">
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-8 lg:mb-10">
-                    <div className="flex gap-3 items-center">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-100">
-                        <LayoutDashboard className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="w-28 h-3 bg-slate-900 rounded-full" />
-                        <div className="w-16 h-2 bg-slate-100 rounded-full" />
-                      </div>
+              <div className="relative rounded-[2rem] border border-white/10 bg-black/60 backdrop-blur-2xl shadow-[0_30px_100px_-20px_rgba(0,0,0,1)] overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+                
+                {/* Mockup Topbar */}
+                <div className="h-12 border-b border-white/5 flex items-center px-4 gap-2 bg-white/[0.02]">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                </div>
+                
+                <div className="p-8 grid grid-cols-12 gap-8 h-[500px]">
+                  {/* Sidebar */}
+                  <div className="col-span-3 border-r border-white/5 pr-4 space-y-4">
+                    <div className="flex items-center gap-3 px-3 py-2 bg-blue-500/10 rounded-xl border border-blue-500/20 text-blue-400">
+                      <LayoutDashboard className="w-4 h-4" />
+                      <div className="text-sm font-bold">Terminal</div>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
-                        <Lock className="w-3 h-3 text-slate-400" />
+                    {[1,2,3].map(i => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-2 opacity-50">
+                        <div className="w-4 h-4 rounded bg-white/10" />
+                        <div className="w-20 h-2.5 rounded bg-white/10" />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="space-y-4 lg:space-y-5">
-                    {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.6 + i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
-                        className="flex gap-4 items-center p-3 lg:p-4 rounded-xl lg:rounded-2xl border border-slate-50 hover:bg-slate-50/50 transition-colors"
-                      >
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                          i === 0 ? "bg-blue-50" : i === 1 ? "bg-emerald-50" : "bg-violet-50"
-                        }`}>
-                          <HeartPulse className={`w-5 h-5 ${
-                            i === 0 ? "text-blue-600" : i === 1 ? "text-emerald-600" : "text-violet-600"
-                          }`} />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <div className="w-2/3 h-3 bg-slate-900/[0.06] rounded-full" />
-                          <div className="w-1/2 h-2 bg-slate-100 rounded-full" />
-                        </div>
-                        <div className={`w-16 h-6 rounded-full ${
-                          i === 0 ? "bg-emerald-50" : i === 1 ? "bg-blue-50" : "bg-amber-50"
-                        }`} />
-                      </motion.div>
                     ))}
                   </div>
+                  
+                  {/* Content Area */}
+                  <div className="col-span-9 space-y-6 relative">
+                    <div className="flex justify-between items-center">
+                       <div className="space-y-2">
+                         <div className="w-48 h-5 rounded-md bg-white/10" />
+                         <div className="w-32 h-3 rounded-md bg-white/5" />
+                       </div>
+                    </div>
+                    
+                    {/* Animated Lines */}
+                    <div className="space-y-3">
+                      {[0,1,2].map(i => (
+                        <motion.div 
+                          key={i}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 1 + (i * 0.2), duration: 0.8 }}
+                          className="w-full h-16 rounded-xl border border-white/5 bg-white/[0.02] flex items-center px-4 gap-4"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                            <Activity className="w-4 h-4 text-blue-400" />
+                          </div>
+                          <div className="space-y-2 flex-1">
+                            <div className="w-1/3 h-2 rounded bg-white/20" />
+                            <div className="w-1/4 h-2 rounded bg-white/10" />
+                          </div>
+                          <div className="w-16 h-2 rounded bg-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" />
+                        </motion.div>
+                      ))}
+                    </div>
 
-                  {/* Floating Card */}
-                  <motion.div
-                    animate={{ y: [0, -12, 0] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -bottom-2 -right-2 lg:bottom-4 lg:right-4 bg-white shadow-2xl rounded-2xl p-4 border border-slate-100 flex items-center gap-3 z-20"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-100">
-                      <Activity className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Live Traffic</div>
-                      <div className="text-base font-black text-slate-900 font-mono tracking-tight">{liveStats ? liveStats.totalUsers : "..."} Active</div>
-                    </div>
-                  </motion.div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-500/10 blur-[100px] pointer-events-none" />
+                  </div>
                 </div>
               </div>
             </motion.div>
           </motion.div>
         </div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-        >
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Scroll</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-5 h-8 rounded-full border-2 border-slate-200 flex justify-center pt-1.5"
-          >
-            <div className="w-1 h-1.5 rounded-full bg-slate-300" />
-          </motion.div>
-        </motion.div>
       </section>
 
-      {/* ═══ FEATURES STRIP ═══ */}
-      <section className="py-20 px-6 border-y border-slate-100 bg-slate-50/30">
+      {/* ═══ STATS MATRIX ═══ */}
+      <section id="architecture" className="py-24 px-6 bg-black border-y border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid md:grid-cols-3 gap-8 lg:gap-12"
-          >
-            {features.map((f) => (
-              <motion.div key={f.title} variants={fadeUp} className="flex gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100/50 flex items-center justify-center flex-shrink-0">
-                  <f.icon className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-lg mb-1.5">{f.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed">{f.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ SOLUTIONS GRID ═══ */}
-      <section id="solutions" className="py-28 lg:py-40 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 lg:mb-24 gap-8">
-            <motion.div
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              variants={stagger}
-            >
-              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold tracking-widest uppercase mb-6 border border-blue-100">
-                Interfaces
-              </motion.div>
-              <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-slate-900 mb-5 leading-[0.92]">
-                Built for the<br /><span className="text-gradient">Whole Team.</span>
-              </motion.h2>
-              <motion.p variants={fadeUp} className="text-lg text-slate-500 font-medium max-w-lg leading-relaxed">
-                Six specialized, real-time interfaces optimized for every hospital department.
-              </motion.p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <Link
-                href="/login?flow=signUp"
-                className="bg-slate-900 text-white font-bold h-14 px-10 rounded-2xl hover:bg-slate-800 shadow-xl shadow-slate-200 flex items-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
-              >
-                Get Access <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
-          </div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {roles.map((role) => (
-              <motion.div key={role.title} variants={fadeUp}>
-                <Link href={role.link} className="group block h-full">
-                  <div className="p-8 lg:p-10 bg-white rounded-[2rem] border border-slate-100 hover:border-slate-200 transition-all hover:shadow-xl hover:shadow-slate-100 flex flex-col h-full relative overflow-hidden">
-                    {/* Gradient Glow on Hover */}
-                    <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br ${role.gradient} opacity-0 group-hover:opacity-[0.06] blur-3xl transition-opacity duration-500`} />
-
-                    <div className={`w-14 h-14 bg-gradient-to-br ${role.gradient} rounded-2xl flex items-center justify-center mb-7 shadow-lg ${role.shadow} group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300`}>
-                      <role.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-2xl font-black mb-3 text-slate-900 tracking-tight">{role.title}</h3>
-                    <p className="text-slate-500 font-medium leading-relaxed mb-8 text-[15px] flex-grow">
-                      {role.description}
-                    </p>
-                    <div className="inline-flex items-center gap-2 font-bold text-blue-600 text-sm group-hover:gap-3 transition-all">
-                      Launch Interface
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ STATS & SECURITY ═══ */}
-      <section id="security" className="py-28 lg:py-40 px-6 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/30 to-white pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto relative z-10">
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="text-center mb-20 lg:mb-28"
-          >
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[0.92]">
-              Clinical Data you<br />can <span className="text-gradient italic">actually</span> trust.
-            </motion.h2>
-            <motion.p variants={fadeUp} className="text-lg lg:text-xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
-              Every action is cryptographically signed. Every report is immutable. HealthOS ensures medical history can never be altered or lost.
-            </motion.p>
-          </motion.div>
-
-          {/* Stat Cards */}
-          <motion.div
+           <motion.div
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {dynamicStats.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
@@ -516,65 +379,145 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ CTA ═══ */}
-      <section className="px-6 pb-28 lg:pb-40">
+      {/* ═══ CAPABILITIES (ECOSYSTEM) ═══ */}
+      <section id="ecosystem" className="py-32 px-6 relative z-10 bg-[#020617]">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-20 lg:mb-28">
+            <motion.div
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              variants={stagger}
+            >
+              <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-white mb-6 leading-[1.1]">
+                Six Specialized <br className="hidden sm:block"/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+                   Operating Environments.
+                </span>
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                HealthOS doesn't compromise. Each role features dedicated sub-systems hyper-optimized for their specific workflows and latency requirements.
+              </motion.p>
+            </motion.div>
+          </div>
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {roles.map((role) => (
+              <motion.div key={role.title} variants={fadeUp}>
+                <Link href={role.link} className="group block h-full">
+                  <div className="p-8 lg:p-10 bg-slate-900/30 backdrop-blur-sm rounded-[2rem] border border-white/5 hover:bg-slate-800/40 hover:border-white/10 transition-all duration-500 h-full relative overflow-hidden flex flex-col items-start gap-4">
+                    
+                    {/* Glowing Accent */}
+                    <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${role.gradient} opacity-0 group-hover:opacity-10 blur-[80px] transition-opacity duration-700 pointer-events-none rounded-full translate-x-1/2 -translate-y-1/2`} />
+
+                    <div className={`w-14 h-14 bg-gradient-to-br ${role.gradient} rounded-2xl flex items-center justify-center shadow-lg ${role.shadow} group-hover:scale-110 transition-transform duration-500`}>
+                      <role.icon className="w-6 h-6 text-white" />
+                    </div>
+                    
+                    <h3 className="text-2xl font-black text-white tracking-tight mt-2">{role.title}</h3>
+                    <p className="text-slate-400 leading-relaxed font-medium text-[15px] flex-grow">
+                      {role.description}
+                    </p>
+                    
+                    <div className="inline-flex items-center gap-2 font-bold text-white text-[11px] uppercase tracking-[0.2em] group-hover:gap-4 transition-all duration-300 mt-4">
+                      Initialize <ChevronRight className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURES ═══ */}
+      <section className="py-24 px-6 border-y border-white/5 bg-slate-950/50 backdrop-blur-md relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-12 lg:gap-16"
+          >
+            {features.map((f) => (
+              <motion.div key={f.title} variants={fadeUp} className="flex gap-6">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <f.icon className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-lg mb-2">{f.title}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed font-medium">{f.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ FINAL CTA ═══ */}
+      <section className="px-6 py-32 lg:py-48 relative z-10 bg-black overflow-hidden">
+        
+        {/* Core Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-blue-600/20 blur-[150px] pointer-events-none rounded-full" />
+
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
-          className="max-w-7xl mx-auto bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 rounded-[2.5rem] lg:rounded-[3.5rem] p-12 md:p-20 lg:p-28 text-center relative overflow-hidden shadow-2xl"
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as const }}
+          className="max-w-4xl mx-auto text-center relative z-10"
         >
-          {/* Decorative Elements */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/[0.07] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/[0.07] rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3" />
-          <div className="absolute top-12 right-16 opacity-[0.04]">
-            <HeartPulse className="w-48 h-48 text-white" strokeWidth={0.5} />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold tracking-[0.25em] uppercase mb-8">
+            <Activity className="w-3.5 h-3.5" />
+            Enterprise Readout
           </div>
-          
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-tight mb-10 leading-[0.92]">
-              Modernize your<br />Clinical Node.
-            </h2>
-            <p className="text-lg text-slate-400 font-medium max-w-xl mx-auto mb-12 leading-relaxed">
-              Join 500+ healthcare institutions already running on HealthOS infrastructure.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/login?flow=signUp"
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold h-16 px-12 rounded-2xl shadow-2xl shadow-blue-900/30 hover:shadow-blue-900/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 text-lg"
-              >
-                Start Free Registry
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/login?flow=signIn"
-                className="border border-slate-700 text-white font-bold h-16 px-12 rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 text-lg"
-              >
-                Enterprise Login
-              </Link>
-            </div>
+          <h2 className="text-5xl md:text-6xl lg:text-8xl font-black text-white tracking-tighter mb-8 leading-[0.9]">
+            The Future of <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+              Care is Here.
+            </span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium">
+            Deploy the most advanced clinical operating system into your institution today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+            <Link
+              href="/login?flow=signUp"
+              className="bg-white text-black font-bold h-14 px-10 rounded-full hover:bg-slate-200 hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.7)] transition-all flex items-center justify-center gap-3 text-sm tracking-widest uppercase"
+            >
+              Deploy Node
+            </Link>
+            <Link
+              href="/login?flow=signIn"
+              className="bg-transparent border border-white/20 text-white font-bold h-14 px-10 rounded-full hover:bg-white/5 transition-all flex items-center justify-center text-sm tracking-widest uppercase"
+            >
+              Authentication Context
+            </Link>
           </div>
         </motion.div>
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="py-16 lg:py-20 px-6 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
+      <footer className="py-12 bg-black border-t border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-black tracking-tight">Health<span className="text-blue-600">OS</span></span>
+            <Activity className="w-5 h-5 text-blue-500" />
+            <span className="text-lg font-bold tracking-tight text-white">Health<span className="text-blue-500">OS</span></span>
           </div>
-          <div className="flex gap-10 text-[11px] font-bold text-slate-400 uppercase tracking-[0.25em]">
-            <a href="#security" className="hover:text-blue-600 transition-colors">Privacy</a>
-            <a href="#security" className="hover:text-blue-600 transition-colors">Terms</a>
-            <a href="#security" className="hover:text-blue-600 transition-colors">Security</a>
-            <a href="#security" className="hover:text-blue-600 transition-colors">Compliance</a>
+          <div className="flex gap-8 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+            <span className="hover:text-blue-400 transition-colors cursor-pointer">Protocol</span>
+            <span className="hover:text-blue-400 transition-colors cursor-pointer">Registry</span>
+            <span className="hover:text-blue-400 transition-colors cursor-pointer">Cryptography</span>
           </div>
-          <div className="text-[11px] font-bold text-slate-300 tracking-widest uppercase">
-            &copy; 2026 HealthOS Architecture
+          <div className="text-[10px] font-bold text-slate-600 tracking-widest uppercase">
+            &copy; 2026 HealthOS Arch
           </div>
         </div>
       </footer>

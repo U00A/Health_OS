@@ -192,7 +192,7 @@ function AuthFormContent() {
         }
 
         .overlay {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 25%, #3b82f6 50%, #06b6d4 100%);
           background-size: 400% 400%;
           animation: gradientShift 15s ease infinite;
           color: #FFFFFF;
@@ -254,23 +254,26 @@ function AuthFormContent() {
 
         .auth-input {
           background-color: rgba(238, 238, 238, 0.9);
-          border: none;
+          border: 2px solid transparent;
           padding: 12px 15px;
           margin: 8px 0;
           width: 100%;
           border-radius: 8px;
           backdrop-filter: blur(5px);
           font-family: 'Montserrat', sans-serif;
+          transition: all 0.2s ease;
         }
 
         .auth-input:focus {
-          outline: 2px solid #7C7ADE;
+          outline: none;
+          border-color: #3b82f6;
           background-color: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .auth-select {
           background-color: rgba(238, 238, 238, 0.9);
-          border: none;
+          border: 2px solid transparent;
           padding: 12px 15px;
           margin: 8px 0;
           width: 100%;
@@ -279,31 +282,40 @@ function AuthFormContent() {
           font-family: 'Montserrat', sans-serif;
           cursor: pointer;
           appearance: none;
+          transition: all 0.2s ease;
         }
 
         .auth-select:focus {
-          outline: 2px solid #7C7ADE;
+          outline: none;
+          border-color: #3b82f6;
           background-color: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .auth-button {
           border-radius: 20px;
-          border: 1px solid #7C7ADE;
-          background-color: #7C7ADE;
+          border: 1px solid #3b82f6;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
           color: #FFFFFF;
           font-size: 12px;
           font-weight: bold;
           padding: 12px 45px;
           letter-spacing: 1px;
           text-transform: uppercase;
-          transition: transform 80ms ease-in;
+          transition: all 80ms ease-in;
           cursor: pointer;
           font-family: 'Montserrat', sans-serif;
           margin-top: 10px;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .auth-button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
         }
 
         .auth-button:active {
-          transform: scale(0.95);
+          transform: scale(0.95) translateY(0);
         }
 
         .auth-button:focus {
@@ -313,78 +325,84 @@ function AuthFormContent() {
         .auth-button:disabled {
           opacity: 0.7;
           cursor: not-allowed;
+          transform: none;
         }
 
         .auth-button.ghost {
-          background-color: transparent;
-          border-color: #FFFFFF;
+          background: transparent;
+          border: 2px solid rgba(255, 255, 255, 0.9);
+          box-shadow: none;
         }
 
         .auth-button.ghost:hover {
-          background-color: rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.15);
+          transform: translateY(-1px);
         }
 
         .auth-heading {
           font-weight: 800;
           margin: 0;
           font-family: 'Montserrat', sans-serif;
-          color: #1a1a1a;
+          color: #1e293b;
         }
 
         .auth-text {
           font-size: 14px;
-          font-weight: 100;
+          font-weight: 400;
           line-height: 20px;
           letter-spacing: 0.5px;
           margin: 15px 0 20px;
           font-family: 'Montserrat', sans-serif;
-          color: #666;
+          color: #64748b;
         }
 
         .auth-label {
           font-size: 11px;
-          font-weight: 400;
-          letter-spacing: 0.3px;
-          color: #888;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          color: #475569;
           text-align: left;
           width: 100%;
           margin-bottom: 4px;
+          text-transform: uppercase;
         }
 
         .error-message {
-          color: #ef4444;
+          color: #dc2626;
           font-size: 12px;
           margin-top: 8px;
-          background: rgba(239, 68, 68, 0.1);
-          padding: 8px 12px;
+          background: rgba(220, 38, 38, 0.08);
+          padding: 10px 14px;
           border-radius: 8px;
           width: 100%;
+          border: 1px solid rgba(220, 38, 38, 0.15);
         }
 
         .success-message {
-          color: #10b981;
+          color: #059669;
           font-size: 12px;
           margin-top: 8px;
-          background: rgba(16, 185, 129, 0.1);
-          padding: 8px 12px;
+          background: rgba(5, 150, 105, 0.08);
+          padding: 10px 14px;
           border-radius: 8px;
           width: 100%;
+          border: 1px solid rgba(5, 150, 105, 0.15);
         }
       `}</style>
 
-      {/* Animated Background */}
+      {/* Animated Background - HealthOS Blue Theme */}
       <div className="absolute inset-0 overflow-hidden rounded-[10px] -z-10">
         <div
-          className="absolute inset-0 opacity-80"
+          className="absolute inset-0 opacity-90"
           style={{
-            background: "linear-gradient(45deg, #667eea 0%, #764ba2 100%)",
+            background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #06b6d4 100%)",
           }}
         />
         {/* Floating particles */}
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-white/80"
+            className="absolute rounded-full bg-white/60"
             style={{
               width: `${3 + (i % 4)}px`,
               height: `${3 + (i % 4)}px`,
@@ -402,10 +420,10 @@ function AuthFormContent() {
         <div className="form-container sign-up-container">
           <form onSubmit={(e) => handleSubmit(e, true)} className="auth-form">
             <h1 className="auth-heading text-2xl">Create Account</h1>
-            <p className="auth-text">Enter your personal details and start journey with us</p>
+            <p className="auth-text">Join HealthOS and connect with your care team</p>
             <input
               type="email"
-              placeholder="Email"
+              placeholder="Email address"
               className="auth-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -413,14 +431,14 @@ function AuthFormContent() {
             />
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Create password"
               className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
             <div className="w-full text-left">
-              <label className="auth-label">Role</label>
+              <label className="auth-label">Your Role</label>
               <div className="relative">
                 <select
                   className="auth-select"
@@ -442,7 +460,7 @@ function AuthFormContent() {
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                "Sign Up"
+                "Create Account"
               )}
             </button>
           </form>
@@ -452,10 +470,10 @@ function AuthFormContent() {
         <div className="form-container sign-in-container">
           <form onSubmit={(e) => handleSubmit(e, false)} className="auth-form">
             <h1 className="auth-heading text-2xl">Sign In</h1>
-            <p className="auth-text">Use your account credentials to access the platform</p>
+            <p className="auth-text">Access your HealthOS dashboard securely</p>
             <input
               type="email"
-              placeholder="Email"
+              placeholder="Email address"
               className="auth-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -481,13 +499,18 @@ function AuthFormContent() {
           </form>
         </div>
 
-        {/* Overlay */}
+        {/* Overlay Panels with HealthOS Branding */}
         <div className="overlay-container">
           <div className="overlay">
             <div className="overlay-panel overlay-left">
+              <div className="mb-6">
+                <svg width="50" height="50" viewBox="0 0 50 50" className="mx-auto mb-4">
+                  <path d="M25 5 L30 20 L45 20 L33 30 L37 45 L25 35 L13 45 L17 30 L5 20 L20 20 Z" fill="rgba(255,255,255,0.9)" />
+                </svg>
+              </div>
               <h1 className="text-3xl font-bold mb-4 text-white">Welcome Back!</h1>
-              <p className="text-white/80 text-sm mb-6 leading-relaxed">
-                To keep connected with us please login with your personal info
+              <p className="text-white/90 text-sm mb-6 leading-relaxed">
+                Access your patient records, real-time vitals monitoring, and care team communications with complete security
               </p>
               <button
                 className="ghost auth-button"
@@ -497,9 +520,15 @@ function AuthFormContent() {
               </button>
             </div>
             <div className="overlay-panel overlay-right">
-              <h1 className="text-3xl font-bold mb-4 text-white">Hello, Friend!</h1>
-              <p className="text-white/80 text-sm mb-6 leading-relaxed">
-                Enter your personal details and start journey with us
+              <div className="mb-6">
+                <svg width="50" height="50" viewBox="0 0 50 50" className="mx-auto mb-4">
+                  <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3" />
+                  <path d="M15 25 L22 32 L35 18" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold mb-4 text-white">Join HealthOS</h1>
+              <p className="text-white/90 text-sm mb-6 leading-relaxed">
+                Create your account to access unified healthcare records, vital sign tracking, and seamless clinical coordination
               </p>
               <button
                 className="ghost auth-button"
