@@ -15,12 +15,14 @@ import {
   LayoutDashboard,
   Lock,
   Zap,
-  Globe,
-  Server,
   ChevronRight,
   Sparkles,
+  Users,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 /* ════════════════════════════════════════════════
    Animated Counter Hook
@@ -110,12 +112,8 @@ const roles = [
   },
 ];
 
-const stats = [
-  { label: "Global Uptime", value: 99.99, suffix: "%", icon: Globe },
-  { label: "Data Latency", value: 15, prefix: "<", suffix: "ms", icon: Zap },
-  { label: "Encryption", value: 512, prefix: "AES-", suffix: "", icon: Lock },
-  { label: "Active Nodes", value: 2847, suffix: "+", icon: Server },
-];
+// We will dynamically construct these inside the component using real data
+// but we keep the structure available in case needed.
 
 const features = [
   {
@@ -155,8 +153,8 @@ const fadeUp = {
    Component
    ════════════════════════════════════════════════ */
 function StatCard({ stat }: { stat: { label: string; value: number; prefix?: string; suffix?: string; icon: React.ComponentType<{ className?: string }> } }) {
-  const { value: count, ref: cardRef } = useCounter(stat.value === 99.99 ? 9999 : stat.value, 2000);
-  const displayValue = stat.value === 99.99 ? (count / 100).toFixed(2) : String(count);
+  const { value: count, ref: cardRef } = useCounter(stat.value, 2000);
+  const displayValue = String(count);
   return (
     <div ref={cardRef} key={stat.label}>
       <motion.div
@@ -178,6 +176,15 @@ function StatCard({ stat }: { stat: { label: string; value: number; prefix?: str
 }
 
 export default function LandingPage() {
+  const liveStats = useQuery(api.stats.getLandingStats);
+  
+  const dynamicStats = [
+    { label: "Active Users", value: liveStats?.totalUsers || 0, icon: Users },
+    { label: "Registered Patients", value: liveStats?.totalPatients || 0, icon: UserRound },
+    { label: "Partner Hospitals", value: liveStats?.totalHospitals || 0, icon: Building2 },
+    { label: "Active Admissions", value: liveStats?.activeAdmissions || 0, icon: BedDouble },
+  ];
+
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -353,8 +360,8 @@ export default function LandingPage() {
                       <Activity className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Live</div>
-                      <div className="text-base font-black text-slate-900 font-mono tracking-tight">1,247 ops/s</div>
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Live Traffic</div>
+                      <div className="text-base font-black text-slate-900 font-mono tracking-tight">{liveStats ? liveStats.totalUsers : "..."} Active</div>
                     </div>
                   </motion.div>
                 </div>
@@ -502,7 +509,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-50px" }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
           >
-            {stats.map((stat) => (
+            {dynamicStats.map((stat) => (
               <StatCard key={stat.label} stat={stat} />
             ))}
           </motion.div>

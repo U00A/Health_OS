@@ -214,4 +214,31 @@ export default defineSchema({
     dispensed_at: v.number(),
     notes: v.optional(v.string()),
   }).index("by_prescription", ["prescription_id"]),
+
+  patient_documents: defineTable({
+    patient_id: v.id("patients"),
+    uploaded_by: v.optional(v.id("users")),
+    uploaded_at: v.number(),
+    document_type: v.union(
+      v.literal("medical_report"),
+      v.literal("lab_result"),
+      v.literal("imaging_report"),
+      v.literal("prescription_scan"),
+      v.literal("insurance"),
+      v.literal("id_document"),
+      v.literal("referral"),
+      v.literal("other")
+    ),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    storage_id: v.id("_storage"),
+    file_name: v.string(),
+    file_type: v.string(),
+    file_size: v.number(),
+    extracted_data: v.optional(v.any()),
+    status: v.optional(v.union(v.literal("pending"), v.literal("processed"), v.literal("reviewed"))),
+  })
+    .index("by_patient", ["patient_id"])
+    .index("by_type", ["document_type"])
+    .index("by_status", ["status"]),
 });

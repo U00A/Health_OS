@@ -4,10 +4,12 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { User, Shield, AlertTriangle, FileText, Phone, Edit2, Check, LogOut, Pill, Beaker, Stethoscope, Clock, Activity } from "lucide-react";
+import { User, Shield, AlertTriangle, FileText, Phone, Edit2, Check, LogOut, Pill, Beaker, Stethoscope, Clock, Activity, Upload, FileText as FileTextIcon, Eye } from "lucide-react";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { VitalsHistory } from "@/components/patient/VitalsHistory";
+import { VitalStatusDashboard } from "@/components/patient/VitalStatusDashboard";
+import { DocumentUpload } from "@/components/patient/DocumentUpload";
 
 export default function PatientPortal() {
   const { data: session } = authClient.useSession();
@@ -186,6 +188,22 @@ export default function PatientPortal() {
           </Card>
         </div>
 
+        {/* Vital Status Dashboard */}
+        {profile && (
+          <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+            <div className="p-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center"><Activity size={20} /></div>
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900">Vital Status Dashboard</h2>
+                  <p className="text-xs text-slate-400">Real-time health monitoring with visual indicators</p>
+                </div>
+              </div>
+              <VitalStatusDashboard patientId={profile._id as Id<"patients">} />
+            </div>
+          </Card>
+        )}
+
         {/* Vitals History */}
         {profile && (
           <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
@@ -271,6 +289,22 @@ export default function PatientPortal() {
             )}
           </div>
         </Card>
+
+        {/* Document Upload */}
+        {profile && (
+          <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+            <div className="p-6">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl flex items-center justify-center"><Upload size={20} /></div>
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900">My Documents</h2>
+                  <p className="text-xs text-slate-400">Upload and manage your medical documents</p>
+                </div>
+              </div>
+              <DocumentUpload patientId={profile._id as Id<"patients">} />
+            </div>
+          </Card>
+        )}
 
         {/* Lab Results */}
         <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
