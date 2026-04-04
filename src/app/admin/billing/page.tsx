@@ -44,7 +44,7 @@ export default function AdminBillingPage() {
 
       await createBilling({
         betterAuthId,
-        patient_id,
+        patient_id: patientId as Id<"patients">,
         admission_id: selectedAdmission as Id<"admissions">,
         service_category: serviceCategory,
         amount: parseFloat(amount),
