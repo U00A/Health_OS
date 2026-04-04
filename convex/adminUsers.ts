@@ -11,6 +11,14 @@ export const listAll = query({
   },
 });
 
+// Public list (for admin dashboard - no auth required, used internally)
+export const listAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
 export const updateRoleAndHospital = mutation({
   args: {
     betterAuthId: v.string(),

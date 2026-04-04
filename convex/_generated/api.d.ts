@@ -30,6 +30,7 @@ import type * as seed from "../seed.js";
 import type * as sessions from "../sessions.js";
 import type * as specialities from "../specialities.js";
 import type * as users from "../users.js";
+import type * as vitals from "../vitals.js";
 import type * as wards from "../wards.js";
 
 import type {
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   sessions: typeof sessions;
   specialities: typeof specialities;
   users: typeof users;
+  vitals: typeof vitals;
   wards: typeof wards;
 }>;
 

@@ -2,31 +2,30 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireRole } from "./security";
 
-// Patients can only update non-clinical fields
 export const updateContactInfo = mutation({
   args: {
     betterAuthId: v.string(),
     phone: v.optional(v.string()),
+    wilaya: v.optional(v.string()),
+    commune: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Only the logged in patient can edit their own contact details
     const user = await requireRole(ctx, ["patient"], args.betterAuthId);
-
-    // Find the patient record linked to this user
     const patientRecord = await ctx.db
       .query("patients")
       .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
       .first();
-
     if (!patientRecord) return null;
-
-    await ctx.db.patch(patientRecord._id, {
-      phone: args.phone,
-    });
-  }
+    const updates: Record<string, unknown> = {};
+    if (args.phone !== undefined) updates.phone = args.phone;
+    if (args.wilaya !== undefined) updates.wilaya = args.wilaya;
+    if (args.commune !== undefined) updates.commune = args.commune;
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(patientRecord._id, updates);
+    }
+  },
 });
 
-// Patients can retrieve their own profile
 export const getMyProfile = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
@@ -35,18 +34,83 @@ export const getMyProfile = query({
       .query("patients")
       .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
       .first();
-  }
+  },
+});
+
+export const searchByNationalId = query({
+  args: { national_id: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.national_id || args.national_id.length < 3) return [];
+    const exact = await ctx.db
+      .query("patients")
+      .withIndex("by_national_id", (q) => q.eq("national_id", args.national_id))
+      .first();
+    if (exact) return [exact];
+    // Fallback: scan and prefix match (limited)
+    const all = await ctx.db.query("patients").take(200);
+    return all.filter(
+      (p) =>
+        p.national_id.startsWith(args.national_id) ||
+        p.first_name.toLowerCase().includes(args.national_id.toLowerCase()) ||
+        p.last_name.toLowerCase().includes(args.national_id.toLowerCase())
+    ).slice(0, 10);
+  },
+});
+
+export const getById = query({
+  args: { id: v.id("patients") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
+export const create = mutation({
+  args: {
+    betterAuthId: v.string(),
+    national_id: v.string(),
+    first_name: v.string(),
+    last_name: v.string(),
+    dob: v.string(),
+    sex: v.optional(v.union(v.literal("male"), v.literal("female"))),
+    blood_type: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    wilaya: v.optional(v.string()),
+    commune: v.optional(v.string()),
+    allergies: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["admin", "medical_staff", "medecin_etat", "private_doctor"], args.betterAuthId);
+
+    // Check duplicate national ID
+    const existing = await ctx.db
+      .query("patients")
+      .withIndex("by_national_id", (q) => q.eq("national_id", args.national_id))
+      .first();
+    if (existing) throw new Error("A patient with this national ID already exists.");
+
+    return await ctx.db.insert("patients", {
+      national_id: args.national_id,
+      first_name: args.first_name,
+      last_name: args.last_name,
+      dob: args.dob,
+      sex: args.sex,
+      blood_type: args.blood_type,
+      phone: args.phone,
+      wilaya: args.wilaya,
+      commune: args.commune,
+      allergies: args.allergies || [],
+    });
+  },
 });
 
 export const seedDemoPatient = mutation({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx, ["patient"], args.betterAuthId);
-    const existingPatient = await ctx.db.query("patients").withIndex("by_user_id", q => q.eq("user_id", user._id)).first();
-    
+    const existingPatient = await ctx.db.query("patients").withIndex("by_user_id", (q) => q.eq("user_id", user._id)).first();
+
     if (!existingPatient) {
       const fakeNationalId = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-      
       await ctx.db.insert("patients", {
         user_id: user._id,
         national_id: fakeNationalId,
@@ -57,8 +121,8 @@ export const seedDemoPatient = mutation({
         phone: user.phone || "0555000000",
         wilaya: "Algiers",
         commune: "Bab Ezzouar",
-        allergies: ["Penicillin", "Peanuts"]
+        allergies: ["Penicillin", "Peanuts"],
       });
     }
-  }
+  },
 });

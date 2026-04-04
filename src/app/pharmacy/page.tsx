@@ -3,30 +3,38 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Pill, CheckCircle, Search, ShieldCheck } from "lucide-react";
+import { Pill, CheckCircle, ShieldCheck, AlertTriangle, Clock, Inbox } from "lucide-react";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
-import { Id, Doc } from "../../../convex/_generated/dataModel";
+import { Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 
 export default function PharmacyInterface() {
   const betterAuthId = useBetterAuthId();
-  const [patientId, setPatientId] = useState("");
-  // Conditionally execute query if we have a plausible ID
-  const prescriptions = useQuery(api.prescriptions.listByPatient, 
-    patientId.length > 5 ? { patient_id: patientId as Id<"patients"> } : "skip"
-  );
-  
+  const pendingQueue = useQuery(api.prescriptions.listPending, betterAuthId ? { betterAuthId } : "skip");
   const dispenseMutation = useMutation(api.dispenseRecords.dispense);
+  const [verified, setVerified] = useState<Record<string, Set<number>>>({});
+  const [dispensing, setDispensing] = useState<string | null>(null);
 
-  const handleDispense = async (pid: Id<"prescriptions">) => {
+  const toggleVerify = (pid: string, idx: number) => {
+    setVerified((prev) => {
+      const copy = { ...prev };
+      const set = new Set(copy[pid] || []);
+      if (set.has(idx)) set.delete(idx); else set.add(idx);
+      copy[pid] = set;
+      return copy;
+    });
+  };
+
+  const allVerified = (pid: string, count: number) => (verified[pid]?.size || 0) === count;
+
+  const handleDispense = async (pid: string) => {
     if (!betterAuthId) return;
+    setDispensing(pid);
     try {
-      await dispenseMutation({ betterAuthId, prescription_id: pid, notes: "Verified and dispensed securely via POS terminal." });
-      alert("Verification successful. Dispense record immutably locked.");
-    } catch(e: any) {
-      alert("Transaction verification failed: " + e.message);
-    }
-  }
+      await dispenseMutation({ betterAuthId, prescription_id: pid as Id<"prescriptions">, notes: "Verified and dispensed." });
+    } catch (e: unknown) { alert("Dispense failed: " + (e as Error).message); }
+    finally { setDispensing(null); }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -36,98 +44,80 @@ export default function PharmacyInterface() {
         </div>
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Dispensary Terminal</h1>
-          <p className="text-slate-500 font-medium">Verify & Dispense Secure Prescriptions</p>
+          <p className="text-slate-500 font-medium">{pendingQueue ? `${pendingQueue.length} pending` : "Loading..."}</p>
         </div>
       </div>
 
-      <Card className="border-l-4 border-l-emerald-500 max-w-xl shadow-lg shadow-emerald-100/50">
-        <div className="p-6 space-y-4">
-          <label className="block text-sm font-black uppercase tracking-widest text-slate-400">
-            Patient Registry Scan
-          </label>
-          <div className="flex gap-3 items-center">
-            <div className="flex-1">
-              <input 
-                type="text" 
-                placeholder="Search patient UID..." 
-                className="w-full text-lg font-mono p-4 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all bg-slate-50 outline-none"
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-              />
+      <div className="space-y-6">
+        {pendingQueue === undefined ? (
+          <div className="p-12 border border-dashed border-slate-200 rounded-3xl flex flex-col items-center gap-4 text-emerald-600 bg-emerald-50/50">
+            <Spinner color="success" size="lg" /><span className="font-bold">Loading queue...</span>
+          </div>
+        ) : pendingQueue.length === 0 ? (
+          <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
+            <div className="p-12 text-center">
+              <Inbox size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="font-bold text-slate-700 text-lg mb-2">Queue Empty</h3>
+              <p className="text-slate-500 text-sm font-medium">New prescriptions appear here in real-time.</p>
             </div>
-            <Button 
-              className="h-14 w-14 rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-200" 
-              isIconOnly
-            >
-              <Search size={24} />
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <div className="space-y-6 max-w-3xl">
-        {prescriptions === undefined && patientId.length > 5 ? (
-          <div className="p-12 border border-slate-200 border-dashed rounded-3xl flex flex-col items-center justify-center gap-4 text-emerald-600 bg-emerald-50/50 h-48">
-            <Spinner color="success" size="lg" />
-            <span className="font-bold tracking-tight">Accessing secure records...</span>
-          </div>
-        ) : prescriptions?.length === 0 ? (
-          <div className="p-8 border border-slate-200 border-dashed rounded-3xl bg-slate-50 flex items-center justify-center">
-            <p className="text-slate-500 font-medium text-lg">No active prescriptions allocated to this registry ID.</p>
-          </div>
-        ) : (
-          prescriptions?.map((p: Doc<"prescriptions">) => (
-            <Card key={p._id} className="border border-slate-200 hover:border-emerald-300 transition-all shadow-sm group overflow-hidden">
-              <div className="p-0">
-                <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    Issued: <span className="text-slate-900 font-bold">{new Date(p.issued_at).toLocaleDateString()}</span>
-                  </div>
-                   <Chip 
-                     color={p.status === 'active' ? 'accent' : p.status === 'dispensed' ? 'default' : 'danger'} 
-                     variant="soft"
-                     className="font-black uppercase tracking-widest text-[10px]"
-                   >
-                     {p.status}
-                   </Chip>
-                </div>
-                
-                <div className="p-6">
-                  <ul className="space-y-4 mb-8">
-                    {p.medications.map((m, idx) => (
-                      <li key={idx} className="flex gap-4 items-start bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                          <Pill size={16} className="text-emerald-600" />
-                        </div>
-                        <div>
-                          <strong className="block text-slate-900 text-lg font-bold">{m.name}</strong>
-                          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium mt-1">
-                            <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700">{m.dose}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>{m.frequency}</span>
-                            <span className="text-slate-300">•</span>
-                            <span>{m.duration}</span>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {p.status === 'active' && (
-                    <Button 
-                      onPress={() => handleDispense(p._id)}
-                      className="w-full h-14 bg-slate-900 text-white font-bold text-base rounded-xl shadow-xl shadow-slate-900/20 hover:scale-[1.01] transition-transform"
-                    >
-                      <ShieldCheck size={20} className="text-emerald-400" /> Acknowledge & Authenticate Dispense
-                    </Button>
-                  )}
+          </Card>
+        ) : pendingQueue.map((p) => (
+          <Card key={p._id} className="border border-slate-200 hover:border-emerald-300 transition-all shadow-sm overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
+              <div>
+                <div className="font-bold text-slate-900 text-lg">{p.patientName}</div>
+                <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                  <span className="font-mono bg-slate-100 px-2 rounded text-xs">{p.patientNationalId}</span>
+                  <span className="text-slate-300">•</span>
+                  <span>Dr. {p.doctorName}</span>
+                  <span className="text-slate-300">•</span>
+                  <Clock size={12} /><span>{new Date(p.issued_at).toLocaleDateString()}</span>
                 </div>
               </div>
-            </Card>
-          ))
-        )}
+              {p.patientAllergies && p.patientAllergies.length > 0 && (
+                <div className="flex items-center gap-1 bg-rose-100 border border-rose-200 px-3 py-2 rounded-xl">
+                  <AlertTriangle size={14} className="text-rose-600" />
+                  {p.patientAllergies.map((a: string) => (
+                    <Chip key={a} size="sm" color="danger" className="text-[9px] font-black uppercase tracking-widest">{a}</Chip>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-5">
+              <ul className="space-y-3 mb-6">
+                {p.medications.map((m, idx) => {
+                  const isV = verified[p._id]?.has(idx) || false;
+                  return (
+                    <li key={idx} onClick={() => toggleVerify(p._id, idx)}
+                      className={`flex gap-4 items-center p-4 rounded-xl border cursor-pointer transition-all ${isV ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-100 hover:border-emerald-200"}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isV ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>
+                        <CheckCircle size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <strong className="block text-slate-900 font-bold">{m.name}</strong>
+                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium mt-1">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700">{m.dose}</span>
+                          <span className="text-slate-300">•</span><span>{m.frequency}</span>
+                          <span className="text-slate-300">•</span><span>{m.duration}</span>
+                        </div>
+                      </div>
+                      <Chip size="sm" color={isV ? "success" : "default"} variant="soft" className="text-[9px] font-black uppercase tracking-widest">
+                        {isV ? "Verified" : "Pending"}
+                      </Chip>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Button onPress={() => handleDispense(p._id)}
+                isDisabled={!allVerified(p._id, p.medications.length) || dispensing === p._id}
+                className={`w-full h-14 font-bold text-base rounded-xl shadow-xl transition-transform ${allVerified(p._id, p.medications.length) ? "bg-slate-900 text-white hover:scale-[1.01]" : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"}`}>
+                <ShieldCheck size={20} className={allVerified(p._id, p.medications.length) ? "text-emerald-400" : ""} />
+                {dispensing === p._id ? "Processing..." : allVerified(p._id, p.medications.length) ? "Acknowledge & Dispense" : `Verify all ${p.medications.length} lines`}
+              </Button>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
-  )
+  );
 }

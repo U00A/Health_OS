@@ -4,8 +4,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { User, Shield, AlertTriangle, FileText, Phone, Lock, Edit2, Check, LogOut } from "lucide-react";
-import { Card, Button, Chip, Spinner, Input } from "@heroui/react";
+import { User, Shield, AlertTriangle, FileText, Phone, Edit2, Check, LogOut, Pill, Beaker, Stethoscope, Clock } from "lucide-react";
+import { Card, Button, Chip, Spinner } from "@heroui/react";
 
 export default function PatientPortal() {
   const { data: session } = authClient.useSession();
@@ -13,7 +13,21 @@ export default function PatientPortal() {
   const profile = useQuery(api.patients.getMyProfile, betterAuthId ? { betterAuthId } : "skip");
   const updateProfile = useMutation(api.patients.updateContactInfo);
   const seedData = useMutation(api.patients.seedDemoPatient);
-  
+
+  // Live data queries - only run when we have a patient profile
+  const prescriptions = useQuery(
+    api.prescriptions.listByPatient,
+    profile ? { patient_id: profile._id } : "skip"
+  );
+  const labResults = useQuery(
+    api.labResults.listByPatient,
+    profile ? { patient_id: profile._id } : "skip"
+  );
+  const doctors = useQuery(
+    api.doctorPatients.listDoctorsForPatient,
+    profile ? { patient_id: profile._id } : "skip"
+  );
+
   const [phone, setPhone] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
@@ -27,12 +41,8 @@ export default function PatientPortal() {
     try {
       await updateProfile({ betterAuthId, phone });
       setIsEditing(false);
-      alert("Contact information updated successfully.");
-    } catch(e) {
-      const error = e as Error;
-      alert("Error saving: " + error.message);
-    }
-  }
+    } catch (e) { alert("Error: " + (e as Error).message); }
+  };
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -42,14 +52,14 @@ export default function PatientPortal() {
   if (profile === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
-         <div className="flex flex-col items-center gap-4 text-blue-600">
-           <Spinner size="lg" />
-           <span className="font-bold tracking-widest uppercase text-xs">Loading Secure Portal</span>
-         </div>
+        <div className="flex flex-col items-center gap-4 text-blue-600">
+          <Spinner size="lg" />
+          <span className="font-bold tracking-widest uppercase text-xs">Loading Secure Portal</span>
+        </div>
       </div>
     );
   }
-  
+
   if (profile === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
@@ -64,27 +74,17 @@ export default function PatientPortal() {
             </div>
             <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
               <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                To protect medical privacy, a clinical administrator must link your account to your offline hospital profile before records appear here.
+                A clinical administrator must link your account to your hospital profile before records appear.
               </p>
             </div>
             <div className="flex flex-col gap-3 pt-2">
-              <Button 
-                variant="secondary" 
-                className="w-full font-bold"
-                onPress={() => betterAuthId && void seedData({ betterAuthId }).then(() => window.location.reload())}
-              >
+              <Button variant="secondary" className="w-full font-bold"
+                onPress={() => betterAuthId && void seedData({ betterAuthId }).then(() => window.location.reload())}>
                 Generate Demo Data
               </Button>
-              <Button variant="primary" className="w-full font-bold" onPress={() => window.location.href = "/"}>
-                Refresh Account Status
+              <Button variant="ghost" className="w-full font-bold border-none text-rose-600" onPress={handleSignOut}>
+                <LogOut size={16} /> Secure Sign Out
               </Button>
-              <Button 
-                variant="ghost" 
-                 className="w-full font-bold border-none text-rose-600"
-                 onPress={handleSignOut}
-               >
-                 <LogOut size={16} /> Secure Sign Out
-               </Button>
             </div>
           </div>
         </Card>
@@ -108,113 +108,191 @@ export default function PatientPortal() {
             <div className="flex flex-wrap gap-4 mt-4 text-blue-100 font-medium font-mono text-sm">
               <span className="flex items-center gap-1.5"><User size={16} /> {profile.national_id}</span>
               <span className="text-blue-400">•</span>
-              <span>DOB: {new Date(profile.dob).toLocaleDateString()}</span>
+              <span>DOB: {profile.dob}</span>
+              {profile.blood_type && <><span className="text-blue-400">•</span><span>{profile.blood_type}</span></>}
             </div>
           </div>
-          <div className="w-16 h-16 md:w-24 md:h-24 bg-white/10 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center shadow-2xl">
-            <User className="w-8 h-8 md:w-12 md:h-12 text-white/50" />
-          </div>
+          <Button variant="ghost" className="text-white border-white/20 font-bold" onPress={handleSignOut}>
+            <LogOut size={16} /> Sign Out
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 mt-8 md:-mt-8 relative z-20 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        
-        {/* Contact Info Card */}
-        <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center">
-                <Phone size={20} />
+      <div className="max-w-5xl mx-auto px-6 mt-8 md:-mt-8 relative z-20 space-y-6">
+        {/* Top Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Contact Info */}
+          <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center"><Phone size={20} /></div>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">Contact Info</h2>
               </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900">Contact Info</h2>
-            </div>
-            
-            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Phone Number</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Phone</label>
                 {isEditing ? (
                   <div className="flex gap-2">
-                    <Input 
-                      autoFocus
-                      type="text" 
-                      value={phone} 
-                      onChange={(e) => setPhone(e.target.value)} 
-                      className="font-mono text-lg"
-                      size={16}
-                    />
+                    <input autoFocus type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
+                      className="flex-1 p-3 rounded-lg border border-slate-200 font-mono text-lg focus:border-blue-500 outline-none" />
                   </div>
                 ) : (
                   <div className="text-xl font-bold text-slate-900 font-mono tracking-tight">{profile.phone || "Not set"}</div>
                 )}
               </div>
-              
-              <div className="pt-4 flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2">
                 {isEditing ? (
                   <>
                     <Button variant="ghost" onPress={() => setIsEditing(false)} className="font-bold">Cancel</Button>
-                     <Button className="font-bold shadow-md shadow-blue-200 bg-blue-600 text-white" onPress={handleSave}>
-                       <Check size={16} /> Save Changes
-                     </Button>
+                    <Button className="font-bold bg-blue-600 text-white shadow-md shadow-blue-200" onPress={handleSave}>
+                      <Check size={16} /> Save
+                    </Button>
                   </>
                 ) : (
-                   <Button variant="ghost" className="font-bold text-blue-600" onPress={startEditing}>
-                     <Edit2 size={16} /> Edit Information
-                   </Button>
+                  <Button variant="ghost" className="font-bold text-blue-600" onPress={startEditing}>
+                    <Edit2 size={16} /> Edit
+                  </Button>
                 )}
               </div>
             </div>
+          </Card>
+
+          {/* Allergies */}
+          <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center"><Shield size={20} /></div>
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">Clinical Overview</h2>
+              </div>
+              {profile.allergies && profile.allergies.length > 0 ? (
+                <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex gap-3">
+                  <AlertTriangle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+                  <div>
+                    <strong className="text-rose-900 font-bold block mb-2">Active Allergy Alerts</strong>
+                    <div className="flex gap-1 flex-wrap">
+                      {profile.allergies.map((a: string) => (
+                        <Chip key={a} size="sm" color="danger" variant="soft" className="text-[9px] font-black uppercase tracking-widest">{a}</Chip>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-2 text-emerald-700 text-sm font-medium">
+                  <Check size={16} /> No critical allergies on file.
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Assigned Doctors */}
+        <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+          <div className="p-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><Stethoscope size={20} /></div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">My Doctors</h2>
+            </div>
+            {doctors === undefined ? (
+              <div className="py-6 text-center text-slate-400 text-sm">Loading...</div>
+            ) : doctors.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-sm font-medium">No doctors assigned yet.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {doctors.map((d) => d && (
+                  <div key={d._id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                      <User size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">{d.name || "Doctor"}</p>
+                      <p className="text-xs text-slate-500 font-medium capitalize">{d.role?.replace("_", " ")}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
 
-        {/* Clinical Data Card */}
+        {/* Prescriptions */}
         <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center">
-                <Shield className="text-slate-600" size={20} />
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900">Clinical Overview</h2>
+          <div className="p-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center"><Pill size={20} /></div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Prescriptions</h2>
             </div>
-
-            {profile.allergies && profile.allergies.length > 0 ? (
-              <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex gap-3">
-                <AlertTriangle className="text-rose-600 shrink-0 mt-0.5" size={20} />
-                <div>
-                  <strong className="text-rose-900 font-bold block mb-2">Active Allergy Alerts</strong>
-                  <ul className="list-disc pl-5 text-sm font-medium text-rose-700/80 space-y-1">
-                    {profile.allergies.map((a: string) => <li key={a}>{a}</li>)}
-                  </ul>
-                </div>
-              </div>
+            {prescriptions === undefined ? (
+              <div className="py-6 text-center text-slate-400 text-sm">Loading prescriptions...</div>
+            ) : prescriptions.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-sm font-medium">No prescriptions on record.</div>
             ) : (
-              <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl flex items-center gap-2 text-slate-500 text-sm font-medium">
-                <Check className="text-emerald-500" size={16} /> No critical allergies on file.
+              <div className="space-y-3">
+                {prescriptions.map((p) => (
+                  <div key={p._id} className="border border-slate-100 rounded-xl p-4 bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                        <Clock size={12} /><span>{new Date(p.issued_at).toLocaleDateString()}</span>
+                        <span className="text-slate-300">•</span>
+                        <span>Dr. {p.doctorName}</span>
+                      </div>
+                      <Chip size="sm" variant="soft"
+                        color={p.status === "active" ? "accent" : p.status === "dispensed" ? "success" : p.status === "partially_dispensed" ? "warning" : "danger"}
+                        className="text-[9px] font-black uppercase tracking-widest">
+                        {p.status.replace("_", " ")}
+                      </Chip>
+                    </div>
+                    <ul className="space-y-2">
+                      {p.medications.map((m, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm">
+                          <Pill size={12} className="text-emerald-500 shrink-0" />
+                          <span className="font-bold text-slate-900">{m.name}</span>
+                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-600">{m.dose}, {m.frequency}, {m.duration}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </div>
             )}
+          </div>
+        </Card>
 
-            <div className="space-y-3 pt-2">
-              <div className="p-4 bg-white border border-slate-200 rounded-xl flex justify-between items-center opacity-60 grayscale cursor-not-allowed">
-                <div className="flex items-center gap-3 font-semibold text-slate-700">
-                  <FileText size={20} />
-                  Latest Prescriptions
-                </div>
-                <div className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                  <Lock size={12} /> Encrypted
-                </div>
-              </div>
-              <div className="p-4 bg-white border border-slate-200 rounded-xl flex justify-between items-center opacity-60 grayscale cursor-not-allowed">
-                <div className="flex items-center gap-3 font-semibold text-slate-700">
-                  <FileText size={20} />
-                  Laboratory Results
-                </div>
-                <div className="flex items-center gap-1 text-[10px] uppercase font-black tracking-widest text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                  <Lock size={12} /> Encrypted
-                </div>
-              </div>
+        {/* Lab Results */}
+        <Card className="border border-slate-200 shadow-lg shadow-slate-200/50">
+          <div className="p-6">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+              <div className="w-10 h-10 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center"><Beaker size={20} /></div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Lab Results</h2>
             </div>
+            {labResults === undefined ? (
+              <div className="py-6 text-center text-slate-400 text-sm">Loading results...</div>
+            ) : labResults.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-sm font-medium">No lab results on record.</div>
+            ) : (
+              <div className="space-y-3">
+                {labResults.map((r) => (
+                  <div key={r._id} className="border border-slate-100 rounded-xl p-4 bg-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-bold text-slate-900">{r.analysis_type}</div>
+                      <span className="text-xs text-slate-400 font-mono">{new Date(r.uploaded_at).toLocaleDateString()}</span>
+                    </div>
+                    {r.values && typeof r.values === "object" && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {Object.entries(r.values as Record<string, number | null>).map(([key, val]) => val !== null && (
+                          <div key={key} className="bg-slate-50 border border-slate-100 rounded-lg p-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">{key.replace(/_/g, " ")}</span>
+                            <span className="text-lg font-bold font-mono text-slate-900">{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Card>
       </div>
     </div>
-  )
+  );
 }

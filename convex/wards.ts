@@ -31,6 +31,13 @@ export const update = mutation({
   },
 });
 
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("wards").collect();
+  },
+});
+
 export const listByHospital = query({
   args: { hospital_id: v.id("hospitals") },
   handler: async (ctx, args) => {

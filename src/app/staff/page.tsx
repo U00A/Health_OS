@@ -1,154 +1,343 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { BedDouble, UserPlus, ClipboardList } from "lucide-react";
+import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
-import { Id, Doc } from "../../../convex/_generated/dataModel";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
+import { PatientSearchModal } from "@/components/clinical/PatientSearchModal";
+import { VitalsEntryForm } from "@/components/clinical/VitalsEntryForm";
+import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
+
+type StaffView = "main" | "admit" | "vitals" | "register" | "log_entry";
 
 export default function StaffDashboard() {
   const betterAuthId = useBetterAuthId();
   const user = useQuery(api.users.current, betterAuthId ? { betterAuthId } : "skip");
-  
-  // Fetch wards for the user's hospital, then use the first ward
-  const wards = useQuery(api.wards.listByHospital, 
-    user?.hospital_id ? { hospital_id: user.hospital_id } : "skip"
-  );
-  
+  const wards = useQuery(api.wards.listByHospital, user?.hospital_id ? { hospital_id: user.hospital_id } : "skip");
   const firstWardId = wards && wards.length > 0 ? wards[0]._id : undefined;
-  
-  const beds = useQuery(api.beds.getWardBeds, 
-    firstWardId ? { ward_id: firstWardId } : "skip"
-  );
-  const logs = useQuery(api.caseEntries.getWardLog, 
-    firstWardId && betterAuthId ? { betterAuthId, ward_id: firstWardId } : "skip"
-  );
+  const beds = useQuery(api.beds.getWardBeds, firstWardId ? { ward_id: firstWardId } : "skip");
+  const logs = useQuery(api.caseEntries.getWardLog, firstWardId && betterAuthId ? { betterAuthId, ward_id: firstWardId } : "skip");
+  const admissions = useQuery(api.admissions.listActiveByWard, firstWardId ? { ward_id: firstWardId } : "skip");
 
+  const admitMutation = useMutation(api.admissions.admit);
+  const createEntry = useMutation(api.caseEntries.createEntry);
+
+  const [activeView, setActiveView] = useState<StaffView>("main");
+  const [showSearch, setShowSearch] = useState(false);
+  const [admitPatient, setAdmitPatient] = useState<Doc<"patients"> | null>(null);
+  const [admitBed, setAdmitBed] = useState<string>("");
+  const [admitType, setAdmitType] = useState<"emergency" | "scheduled" | "transfer">("scheduled");
+  const [vitalsTarget, setVitalsTarget] = useState<{ id: Id<"patients">; name: string } | null>(null);
+
+  // Case entry
+  const [entryType, setEntryType] = useState<"observation" | "nursing_note" | "escalation" | "procedure" | "general">("observation");
+  const [entryNotes, setEntryNotes] = useState("");
+
+  const vacantBeds = beds?.filter((b) => b.status === "vacant") || [];
+
+  const handleAdmit = async () => {
+    if (!admitPatient || !admitBed || !firstWardId || !betterAuthId) return;
+    try {
+      await admitMutation({
+        betterAuthId,
+        patient_id: admitPatient._id,
+        bed_id: admitBed as Id<"beds">,
+        ward_id: firstWardId,
+        admission_type: admitType,
+      });
+      setAdmitPatient(null);
+      setAdmitBed("");
+      setActiveView("main");
+    } catch (e: unknown) {
+      const error = e as Error;
+      alert(error.message);
+    }
+  };
+
+  const handleLogEntry = async () => {
+    if (!firstWardId || !betterAuthId || !entryNotes.trim()) return;
+    try {
+      await createEntry({
+        betterAuthId,
+        ward_id: firstWardId,
+        entry_type: entryType,
+        notes: entryNotes,
+      });
+      setEntryNotes("");
+      setActiveView("main");
+    } catch (e: unknown) {
+      const error = e as Error;
+      alert(error.message);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Ward Operations</h1>
-          <p className="text-slate-500 font-medium mt-1">
-            {wards && wards.length > 0 ? wards[0].name : "Loading ward..."}
-          </p>
+          <p className="text-slate-500 font-medium mt-1">{wards && wards.length > 0 ? wards[0].name : "Loading ward..."}</p>
         </div>
-        <Button variant="primary" className="font-bold shadow-lg shadow-blue-200"><UserPlus size={18} /> Admit Patient</Button>
+        <div className="flex gap-2">
+          <Button className="font-bold bg-sky-600 text-white shadow-lg shadow-sky-200" onPress={() => setActiveView("admit")}>
+            <UserPlus size={16} /> Admit Patient
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("log_entry")}>
+            <ClipboardList size={16} /> Log Entry
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* BED GRID */}
-        <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center text-sky-600">
-              <BedDouble size={20} />
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900">Bed Status Real-Time</h2>
-          </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {beds === undefined ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-2xl" />
-              ))
-            ) : beds?.length === 0 ? (
-               <Card className="col-span-full border border-dashed border-slate-200 shadow-none bg-slate-50">
-                 <div className="h-32 flex items-center justify-center text-slate-400">
-                    Awaiting real-time stream via Convex Websocket...
-                 </div>
-               </Card>
+      {/* Admit Patient Panel */}
+      {activeView === "admit" && (
+        <Card className="border border-sky-200 shadow-lg bg-sky-50/30">
+          <div className="p-6 space-y-5">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <UserPlus size={18} className="text-sky-600" /> Admit Patient
+            </h2>
+            {!admitPatient ? (
+              <div className="space-y-3">
+                <Button className="font-bold bg-slate-900 text-white" onPress={() => setShowSearch(true)}>
+                  Search Patient by National ID
+                </Button>
+                <Button variant="ghost" className="font-bold" onPress={() => setActiveView("register")}>
+                  Register New Patient
+                </Button>
+              </div>
             ) : (
-              beds?.map((bed: Doc<"beds">) => {
-                const isVacant = bed.status === 'vacant';
-                const isOccupied = bed.status === 'occupied';
-                
-                return (
-                   <Card 
-                     key={bed._id} 
-                     className={`h-28 transition-transform hover:-translate-y-1 ${
-                      isVacant ? 'bg-emerald-50 border-emerald-200' :
-                      isOccupied ? 'bg-rose-50 border-rose-200' :
-                      'bg-amber-50 border-amber-200'
-                    } border`}
-                  >
-                    <div className="flex flex-col justify-between p-3 h-full">
-                      <span className={`font-black text-2xl tracking-tighter ${
-                        isVacant ? 'text-emerald-800' : isOccupied ? 'text-rose-800' : 'text-amber-800'
-                      }`}>
-                        {bed.name}
-                      </span>
-                      <Chip 
-                        size="sm" 
-                        variant="soft" 
-                        color={isVacant ? "success" : isOccupied ? "danger" : "warning"}
-                        className="font-black uppercase tracking-widest text-[10px]"
-                      >
-                        {bed.status}
-                      </Chip>
+              <div className="space-y-4">
+                <div className="bg-white border border-slate-200 p-4 rounded-xl">
+                  <p className="font-bold text-slate-900">{admitPatient.first_name} {admitPatient.last_name}</p>
+                  <p className="text-sm text-slate-500 font-mono">{admitPatient.national_id}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Available Bed</label>
+                    <select
+                      className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none"
+                      value={admitBed}
+                      onChange={(e) => setAdmitBed(e.target.value)}
+                    >
+                      <option value="">Select bed...</option>
+                      {vacantBeds.map((b) => (
+                        <option key={b._id} value={b._id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Admission Type</label>
+                    <div className="flex gap-2">
+                      {(["emergency", "scheduled", "transfer"] as const).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setAdmitType(t)}
+                          className={`flex-1 p-3 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all ${
+                            admitType === t
+                              ? t === "emergency" ? "bg-red-600 text-white border-red-600" : "bg-slate-900 text-white border-slate-900"
+                              : "bg-white border-slate-200 text-slate-500"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
                     </div>
-                  </Card>
-                );
-              })
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button className="font-bold bg-sky-600 text-white shadow-md" onPress={handleAdmit} isDisabled={!admitBed}>
+                    Confirm Admission
+                  </Button>
+                  <Button variant="ghost" className="font-bold" onPress={() => { setAdmitPatient(null); setActiveView("main"); }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
-        </div>
+        </Card>
+      )}
 
-        {/* RECENT LOGS */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
-              <ClipboardList size={20} />
-            </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900">Case Logs</h2>
-          </div>
-
-           <Card className="border border-slate-200 max-h-[600px] overflow-hidden flex flex-col">
-            <div className="p-0 overflow-y-auto">
-              <div className="divide-y divide-slate-100">
-                {logs === undefined ? (
-                  <div className="p-6 space-y-4">
-                    <Skeleton className="h-16 rounded-xl" />
-                    <Skeleton className="h-16 rounded-xl" />
-                    <Skeleton className="h-16 rounded-xl" />
-                  </div>
-                ) : logs?.length === 0 ? (
-                  <div className="p-8 flex items-center justify-center h-32 text-slate-400 font-medium">
-                    Querying entries...
-                  </div>
-                ) : (
-                  logs?.map((log: Doc<"case_entries">) => {
-                     const typeColorMap: Record<string, "accent" | "success" | "danger" | "default"> = {
-                       'admission': 'accent',
-                       'discharge': 'success',
-                       'escalation': 'danger'
-                     };
-                    const color = typeColorMap[log.entry_type] || 'default';
-
-                    return (
-                      <div key={log._id} className="p-4 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center justify-between mb-3">
-                          <Chip size="sm" color={color} variant="soft" className="text-[10px] uppercase font-black tracking-widest font-mono">
-                            {log.entry_type.replace('_', ' ')}
-                          </Chip>
-                          <span className="text-slate-400 text-xs font-mono font-medium">
-                            {new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </span>
-                        </div>
-                        <p className="text-slate-700 font-medium leading-relaxed text-sm">
-                          {log.notes || "System logged event"}
-                        </p>
-                      </div>
-                    );
-                  })
-                )}
+      {/* Case Entry */}
+      {activeView === "log_entry" && (
+        <Card className="border border-slate-200 shadow-lg">
+          <div className="p-6 space-y-4">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <ClipboardList size={18} className="text-slate-600" /> New Case Entry
+            </h2>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Entry Type</label>
+              <div className="flex gap-2 flex-wrap">
+                {(["observation", "nursing_note", "escalation", "procedure", "general"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setEntryType(t)}
+                    className={`px-4 py-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all ${
+                      entryType === t
+                        ? t === "escalation" ? "bg-red-600 text-white border-red-600" : "bg-slate-900 text-white border-slate-900"
+                        : "bg-white border-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {t.replace("_", " ")}
+                  </button>
+                ))}
               </div>
             </div>
-          </Card>
+            <textarea
+              rows={4}
+              placeholder="Enter details..."
+              className="w-full p-3 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium focus:border-blue-500 outline-none resize-none"
+              value={entryNotes}
+              onChange={(e) => setEntryNotes(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <Button className="font-bold bg-slate-900 text-white shadow-md" onPress={handleLogEntry}>
+                <Send size={14} /> Submit Entry
+              </Button>
+              <Button variant="ghost" className="font-bold" onPress={() => setActiveView("main")}>Cancel</Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Register Patient */}
+      {activeView === "register" && betterAuthId && (
+        <RegisterPatientForm betterAuthId={betterAuthId} onSuccess={() => setActiveView("admit")} onCancel={() => setActiveView("main")} />
+      )}
+
+      {/* Vitals */}
+      {activeView === "vitals" && vitalsTarget && betterAuthId && (
+        <VitalsEntryForm
+          patientId={vitalsTarget.id}
+          patientName={vitalsTarget.name}
+          betterAuthId={betterAuthId}
+          onSuccess={() => { setVitalsTarget(null); setActiveView("main"); }}
+          onCancel={() => { setVitalsTarget(null); setActiveView("main"); }}
+        />
+      )}
+
+      {/* Main View: Beds + Logs */}
+      {activeView === "main" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-sky-100 rounded-xl flex items-center justify-center text-sky-600">
+                <BedDouble size={20} />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Bed Status Real-Time</h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {beds === undefined ? (
+                Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)
+              ) : beds.length === 0 ? (
+                <Card className="col-span-full border border-dashed border-slate-200 shadow-none bg-slate-50">
+                  <div className="h-32 flex items-center justify-center text-slate-400 font-medium">
+                    No beds configured for this ward
+                  </div>
+                </Card>
+              ) : (
+                beds.map((bed: Doc<"beds">) => {
+                  const isVacant = bed.status === "vacant";
+                  const isOccupied = bed.status === "occupied";
+                  // Find admission for this bed
+                  const admission = admissions?.find((a) => a.bed_id === bed._id);
+                  return (
+                    <Card
+                      key={bed._id}
+                      className={`transition-transform hover:-translate-y-1 ${isVacant ? "bg-emerald-50 border-emerald-200" : isOccupied ? "bg-rose-50 border-rose-200" : "bg-amber-50 border-amber-200"} border`}
+                    >
+                      <div className="flex flex-col justify-between p-3 h-full min-h-[7rem]">
+                        <span className={`font-black text-2xl tracking-tighter ${isVacant ? "text-emerald-800" : isOccupied ? "text-rose-800" : "text-amber-800"}`}>
+                          {bed.name}
+                        </span>
+                        {admission && (
+                          <p className="text-[10px] font-bold text-slate-600 truncate">{admission.patientName}</p>
+                        )}
+                        <div className="flex items-center justify-between gap-1">
+                          <Chip size="sm" variant="soft" color={isVacant ? "success" : isOccupied ? "danger" : "warning"} className="font-black uppercase tracking-widest text-[10px]">
+                            {bed.status.replace("_", " ")}
+                          </Chip>
+                          {admission && (
+                            <button
+                              onClick={() => setVitalsTarget({ id: admission.patient_id as Id<"patients">, name: admission.patientName })}
+                              className="p-1 rounded-md hover:bg-rose-100 text-rose-500"
+                              title="Record Vitals"
+                            >
+                              <HeartPulse size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Case Logs */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+                <ClipboardList size={20} />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Case Logs</h2>
+            </div>
+            <Card className="border border-slate-200 max-h-[600px] overflow-hidden flex flex-col">
+              <div className="p-0 overflow-y-auto">
+                <div className="divide-y divide-slate-100">
+                  {logs === undefined ? (
+                    <div className="p-6 space-y-4">
+                      <Skeleton className="h-16 rounded-xl" />
+                      <Skeleton className="h-16 rounded-xl" />
+                      <Skeleton className="h-16 rounded-xl" />
+                    </div>
+                  ) : logs.length === 0 ? (
+                    <div className="p-8 flex items-center justify-center h-32 text-slate-400 font-medium">
+                      No entries yet this shift
+                    </div>
+                  ) : (
+                    logs.map((log: Doc<"case_entries">) => {
+                      const typeColorMap: Record<string, "accent" | "success" | "danger" | "warning" | "default"> = {
+                        admission: "accent",
+                        discharge: "success",
+                        escalation: "danger",
+                        observation: "default",
+                        nursing_note: "warning",
+                      };
+                      const color = typeColorMap[log.entry_type] || "default";
+                      return (
+                        <div key={log._id} className="p-4 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <Chip size="sm" color={color} variant="soft" className="text-[10px] uppercase font-black tracking-widest font-mono">
+                              {log.entry_type.replace("_", " ")}
+                            </Chip>
+                            <span className="text-slate-400 text-xs font-mono font-medium">
+                              {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          <p className="text-slate-700 font-medium leading-relaxed text-sm">
+                            {log.notes || "System logged event"}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Patient Search Modal */}
+      <PatientSearchModal
+        isOpen={showSearch}
+        onClose={() => setShowSearch(false)}
+        onSelect={(p) => { setAdmitPatient(p); setShowSearch(false); }}
+      />
     </div>
   );
 }
