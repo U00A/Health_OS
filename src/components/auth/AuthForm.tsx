@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense, useRef, useEffect, useCallback } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Mail, Lock, User, AlertCircle, CheckCircle2, ShieldCheck, Activity } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useMutation } from "convex/react";
@@ -34,7 +34,7 @@ function AuthFormContent() {
     if (searchParams.get("flow") === "signUp" && containerRef.current) {
       containerRef.current.classList.add("right-panel-active");
     }
-  }, []); // Only run on mount
+  }, [searchParams]);
 
   // Listen for demo-fill events
   const handleDemoFill = useCallback((e: Event) => {
@@ -52,10 +52,14 @@ function AuthFormContent() {
 
   const handleSignUp = () => {
     containerRef.current?.classList.add("right-panel-active");
+    setError("");
+    setSuccess("");
   };
 
   const handleSignIn = () => {
     containerRef.current?.classList.remove("right-panel-active");
+    setError("");
+    setSuccess("");
   };
 
   const handleSubmit = async (e: React.FormEvent, isSignUpMode: boolean) => {
@@ -116,7 +120,8 @@ function AuthFormContent() {
         }
       }
 
-      router.push("/");
+      setSuccess(isSignUpMode ? "Account created! Redirecting..." : "Success! Redirecting...");
+      setTimeout(() => router.push("/"), 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Authentication failed.";
       console.error("Auth error:", err);
@@ -126,36 +131,20 @@ function AuthFormContent() {
   };
 
   return (
-    <div className="relative w-full max-w-[768px]" style={{ minHeight: "520px" }}>
+    <div className="relative w-full max-w-[850px] mx-auto scale-[0.95] md:scale-100 transition-transform duration-500" style={{ minHeight: "580px" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
+        @import url('https://fonts.googleapis.com/css?family=Montserrat:400,600,800');
         
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
-          50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
-        }
-        
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes show {
-          0%, 49.99% { opacity: 0; z-index: 1; }
-          50%, 100% { opacity: 1; z-index: 5; }
-        }
-
         .auth-container {
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-          box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+          background-color: rgba(255, 255, 255, 0.05);
+          border-radius: 24px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
           position: relative;
           overflow: hidden;
           width: 100%;
-          min-height: 520px;
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          min-height: 580px;
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           font-family: 'Montserrat', sans-serif;
         }
 
@@ -163,7 +152,7 @@ function AuthFormContent() {
           position: absolute;
           top: 0;
           height: 100%;
-          transition: all 0.6s ease-in-out;
+          transition: all 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
         }
 
         .sign-in-container {
@@ -181,13 +170,19 @@ function AuthFormContent() {
 
         .auth-container.right-panel-active .sign-in-container {
           transform: translateX(100%);
+          opacity: 0;
         }
 
         .auth-container.right-panel-active .sign-up-container {
           transform: translateX(100%);
           opacity: 1;
           z-index: 5;
-          animation: show 0.6s;
+          animation: show 0.7s;
+        }
+
+        @keyframes show {
+          0%, 49.99% { opacity: 0; z-index: 1; }
+          50%, 100% { opacity: 1; z-index: 5; }
         }
 
         .overlay-container {
@@ -197,7 +192,7 @@ function AuthFormContent() {
           width: 50%;
           height: 100%;
           overflow: hidden;
-          transition: transform 0.6s ease-in-out;
+          transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
           z-index: 100;
         }
 
@@ -206,16 +201,22 @@ function AuthFormContent() {
         }
 
         .overlay {
-          background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 25%, #3b82f6 50%, #06b6d4 100%);
+          background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #2563eb 70%, #06b6d4 100%);
           background-size: 400% 400%;
-          animation: gradientShift 15s ease infinite;
+          animation: gradientShift 12s ease infinite;
           color: #FFFFFF;
           position: relative;
           left: -100%;
           height: 100%;
           width: 200%;
           transform: translateX(0);
-          transition: transform 0.6s ease-in-out;
+          transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
 
         .auth-container.right-panel-active .overlay {
@@ -234,248 +235,198 @@ function AuthFormContent() {
           height: 100%;
           width: 50%;
           transform: translateX(0);
-          transition: transform 0.6s ease-in-out;
+          transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
         }
 
-        .overlay-left {
-          transform: translateX(-20%);
-        }
-
-        .auth-container.right-panel-active .overlay-left {
-          transform: translateX(0);
-        }
-
-        .overlay-right {
-          right: 0;
-          transform: translateX(0);
-        }
-
-        .auth-container.right-panel-active .overlay-right {
-          transform: translateX(20%);
-        }
+        .overlay-left { transform: translateX(-20%); }
+        .auth-container.right-panel-active .overlay-left { transform: translateX(0); }
+        .overlay-right { right: 0; transform: translateX(0); }
+        .auth-container.right-panel-active .overlay-right { transform: translateX(20%); }
 
         .auth-form {
-          background-color: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
+          background-color: rgba(255, 255, 255, 0.98);
           display: flex;
           align-items: center;
           justify-content: center;
           flex-direction: column;
-          padding: 0 30px;
+          padding: 0 45px;
           height: 100%;
           text-align: center;
         }
 
-        .auth-input {
-          background-color: rgba(238, 238, 238, 0.9);
-          border: 2px solid transparent;
-          padding: 12px 15px;
-          margin: 8px 0;
+        .input-group {
+          position: relative;
           width: 100%;
-          border-radius: 8px;
-          backdrop-filter: blur(5px);
-          font-family: 'Montserrat', sans-serif;
-          transition: all 0.2s ease;
+          margin: 10px 0;
+        }
+
+        .input-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94a3b8;
+          transition: color 0.3s;
+        }
+
+        .auth-input {
+          background-color: #f8fafc;
+          border: 2px solid transparent;
+          padding: 12px 15px 12px 42px;
+          width: 100%;
+          border-radius: 12px;
+          font-size: 14px;
+          transition: all 0.3s;
+          color: #1e293b;
         }
 
         .auth-input:focus {
           outline: none;
           border-color: #3b82f6;
-          background-color: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          background-color: #fff;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
-        .auth-select {
-          background-color: rgba(238, 238, 238, 0.9);
-          border: 2px solid transparent;
-          padding: 12px 15px;
-          margin: 8px 0;
-          width: 100%;
-          border-radius: 8px;
-          backdrop-filter: blur(5px);
-          font-family: 'Montserrat', sans-serif;
-          cursor: pointer;
-          appearance: none;
-          transition: all 0.2s ease;
-        }
-
-        .auth-select:focus {
-          outline: none;
-          border-color: #3b82f6;
-          background-color: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        .auth-input:focus + .input-icon {
+          color: #3b82f6;
         }
 
         .auth-button {
-          border-radius: 20px;
-          border: 1px solid #3b82f6;
+          border-radius: 12px;
+          border: none;
           background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
           color: #FFFFFF;
-          font-size: 12px;
-          font-weight: bold;
-          padding: 12px 45px;
-          letter-spacing: 1px;
+          font-size: 14px;
+          font-weight: 700;
+          padding: 14px 0;
+          width: 100%;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
-          transition: all 80ms ease-in;
+          transition: all 0.3s;
           cursor: pointer;
-          font-family: 'Montserrat', sans-serif;
-          margin-top: 10px;
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          margin-top: 15px;
+          box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
         }
 
         .auth-button:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+          transform: translateY(-2px);
+          box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
         }
 
-        .auth-button:active {
-          transform: scale(0.95) translateY(0);
-        }
+        .auth-button:active { transform: scale(0.98); }
+        .auth-button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-        .auth-button:focus {
-          outline: none;
-        }
-
-        .auth-button:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .auth-button.ghost {
-          background: transparent;
-          border: 2px solid rgba(255, 255, 255, 0.9);
-          box-shadow: none;
-        }
-
-        .auth-button.ghost:hover {
-          background: rgba(255, 255, 255, 0.15);
-          transform: translateY(-1px);
-        }
-
-        .auth-heading {
-          font-weight: 800;
-          margin: 0;
-          font-family: 'Montserrat', sans-serif;
-          color: #1e293b;
-        }
-
-        .auth-text {
-          font-size: 14px;
-          font-weight: 400;
-          line-height: 20px;
-          letter-spacing: 0.5px;
-          margin: 15px 0 20px;
-          font-family: 'Montserrat', sans-serif;
+        .social-btn {
+          width: 45px;
+          height: 45px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s;
+          cursor: pointer;
           color: #64748b;
         }
 
-        .auth-label {
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          color: #475569;
-          text-align: left;
-          width: 100%;
-          margin-bottom: 4px;
-          text-transform: uppercase;
+        .social-btn:hover {
+          background: #f8fafc;
+          border-color: #3b82f6;
+          color: #3b82f6;
+          transform: translateY(-2px);
         }
 
         .error-message {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           color: #dc2626;
-          font-size: 12px;
-          margin-top: 8px;
-          background: rgba(220, 38, 38, 0.08);
+          font-size: 13px;
+          margin-top: 12px;
+          background: #fef2f2;
           padding: 10px 14px;
-          border-radius: 8px;
+          border-radius: 12px;
           width: 100%;
-          border: 1px solid rgba(220, 38, 38, 0.15);
+          border: 1px solid #fee2e2;
+          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
         .success-message {
+          display: flex;
+          align-items: center;
+          gap: 8px;
           color: #059669;
-          font-size: 12px;
-          margin-top: 8px;
-          background: rgba(5, 150, 105, 0.08);
+          font-size: 13px;
+          margin-top: 12px;
+          background: #ecfdf5;
           padding: 10px 14px;
-          border-radius: 8px;
+          border-radius: 12px;
           width: 100%;
-          border: 1px solid rgba(5, 150, 105, 0.15);
+          border: 1px solid #d1fae5;
         }
       `}</style>
 
-      {/* Animated Background - HealthOS Blue Theme */}
-      <div className="absolute inset-0 overflow-hidden rounded-[10px] -z-10">
-        <div
-          className="absolute inset-0 opacity-90"
-          style={{
-            background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #06b6d4 100%)",
-          }}
-        />
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white/60"
-            style={{
-              width: `${3 + (i % 4)}px`,
-              height: `${3 + (i % 4)}px`,
-              top: `${10 + i * 15}%`,
-              left: `${(i * 20 + 10) % 100}%`,
-              animation: `float ${6 + i}s ease-in-out infinite`,
-              animationDelay: `${i}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <div ref={containerRef} className="auth-container" id="auth-container">
+      <div ref={containerRef} className="auth-container">
         {/* Sign Up Form */}
         <div className="form-container sign-up-container">
           <form onSubmit={(e) => handleSubmit(e, true)} className="auth-form">
-            <h1 className="auth-heading text-2xl">Create Account</h1>
-            <p className="auth-text">Join HealthOS and connect with your care team</p>
-            <input
-              type="email"
-              placeholder="Email address"
-              className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Create password"
-              className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="w-full text-left">
-              <label className="auth-label">Your Role</label>
-              <div className="relative">
-                <select
-                  className="auth-select"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  {roles.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-blue-100 shadow-sm animate-in fade-in zoom-in duration-700">
+               <ShieldCheck className="w-6 h-6 text-blue-600" />
             </div>
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
+            <h1 className="auth-heading text-3xl mb-2">Create Account</h1>
+            <p className="auth-text mb-6 text-slate-500 font-medium tracking-tight">Register your institutional node on the HealthOS network</p>
+            
+            <div className="input-group">
+              <Mail className="input-icon w-4 h-4" />
+              <input
+                type="email"
+                placeholder="Email Address"
+                className="auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="input-group">
+              <Lock className="input-icon w-4 h-4" />
+              <input
+                type="password"
+                placeholder="Create Password"
+                className="auth-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="input-group">
+              <User className="input-icon w-4 h-4" />
+              <select
+                className="auth-input appearance-none cursor-pointer"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                {roles.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+
+            {error && <div className="error-message"><AlertCircle className="w-4 h-4" />{error}</div>}
+            {success && <div className="success-message"><CheckCircle2 className="w-4 h-4" />{success}</div>}
+            
             <button type="submit" className="auth-button" disabled={isLoading}>
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Create Account"
-              )}
+              {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : "Sign Up"}
             </button>
           </form>
         </div>
@@ -483,71 +434,67 @@ function AuthFormContent() {
         {/* Sign In Form */}
         <div className="form-container sign-in-container">
           <form onSubmit={(e) => handleSubmit(e, false)} className="auth-form">
-            <h1 className="auth-heading text-2xl">Sign In</h1>
-            <p className="auth-text">Access your HealthOS dashboard securely</p>
-            <input
-              type="email"
-              placeholder="Email address"
-              className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 mx-auto border border-blue-100 shadow-sm animate-in fade-in zoom-in duration-700">
+               <Activity className="w-6 h-6 text-blue-600" />
+            </div>
+            <h1 className="auth-heading text-3xl mb-2">Sign In</h1>
+            <p className="auth-text mb-6 text-slate-500 font-medium tracking-tight">Access your clinical dashboard via secure protocol</p>
+            
+            <div className="input-group">
+              <Mail className="input-icon w-4 h-4" />
+              <input
+                type="email"
+                placeholder="Email Address"
+                className="auth-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="input-group">
+              <Lock className="input-icon w-4 h-4" />
+              <input
+                type="password"
+                placeholder="Password"
+                className="auth-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2 hover:underline">
+              Forgot your password?
+            </button>
+
+            {error && <div className="error-message"><AlertCircle className="w-4 h-4" />{error}</div>}
+            {success && <div className="success-message"><CheckCircle2 className="w-4 h-4" />{success}</div>}
+            
             <button type="submit" className="auth-button" disabled={isLoading}>
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Sign In"
-              )}
+              {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : "Sign In"}
             </button>
           </form>
         </div>
 
-        {/* Overlay Panels with HealthOS Branding */}
+        {/* Overlay */}
         <div className="overlay-container">
           <div className="overlay">
             <div className="overlay-panel overlay-left">
-              <div className="mb-6">
-                <svg width="50" height="50" viewBox="0 0 50 50" className="mx-auto mb-4">
-                  <path d="M25 5 L30 20 L45 20 L33 30 L37 45 L25 35 L13 45 L17 30 L5 20 L20 20 Z" fill="rgba(255,255,255,0.9)" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold mb-4 text-white">Welcome Back!</h1>
-              <p className="text-white/90 text-sm mb-6 leading-relaxed">
-                Access your patient records, real-time vitals monitoring, and care team communications with complete security
+              <h1 className="text-4xl font-black mb-4">Welcome Back!</h1>
+              <p className="text-blue-100 text-sm mb-8 leading-relaxed font-medium">
+                Access your personalized clinical dashboard and resume your healthcare journey.
               </p>
-              <button
-                className="ghost auth-button"
-                onClick={handleSignIn}
-              >
+              <button className="bg-transparent border-2 border-white/80 rounded-full px-10 py-3 font-bold text-xs uppercase tracking-widest hover:bg-white/10 transition-colors" onClick={handleSignIn}>
                 Sign In
               </button>
             </div>
             <div className="overlay-panel overlay-right">
-              <div className="mb-6">
-                <svg width="50" height="50" viewBox="0 0 50 50" className="mx-auto mb-4">
-                  <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3" />
-                  <path d="M15 25 L22 32 L35 18" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold mb-4 text-white">Join HealthOS</h1>
-              <p className="text-white/90 text-sm mb-6 leading-relaxed">
-                Create your account to access unified healthcare records, vital sign tracking, and seamless clinical coordination
+              <h1 className="text-4xl font-black mb-4">New Here?</h1>
+              <p className="text-blue-100 text-sm mb-8 leading-relaxed font-medium">
+                Create your HealthOS node and join the network of modern medical professionals.
               </p>
-              <button
-                className="ghost auth-button"
-                onClick={handleSignUp}
-              >
+              <button className="bg-transparent border-2 border-white/80 rounded-full px-10 py-3 font-bold text-xs uppercase tracking-widest hover:bg-white/10 transition-colors" onClick={handleSignUp}>
                 Sign Up
               </button>
             </div>
@@ -560,9 +507,7 @@ function AuthFormContent() {
 
 export function AuthForm() {
   return (
-    <Suspense fallback={
-      <div className="mx-auto w-full max-w-md h-96 bg-white/50 rounded-3xl animate-pulse" />
-    }>
+    <Suspense fallback={<div className="mx-auto w-full max-w-md h-96 bg-white/10 rounded-3xl animate-pulse" />}>
       <AuthFormContent />
     </Suspense>
   );

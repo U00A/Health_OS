@@ -23,38 +23,40 @@ export default function InteractiveBackground() {
 
     const initParticles = () => {
       particles = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+      const particleCount = Math.min(50, Math.floor((canvas.width * canvas.height) / 25000));
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: Math.random() * 1.5 + 0.5,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          radius: Math.random() * 2 + 1,
         });
       }
     };
 
-    window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
-    });
-    
-    // Add touch support for mobile flow
-    window.addEventListener("touchmove", (e) => {
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
       if(e.touches.length > 0) {
         mouse.x = e.touches[0].clientX;
         mouse.y = e.touches[0].clientY;
       }
-    });
+    };
 
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    
     resize();
 
     let animationFrame: number;
 
     const animate = () => {
-      ctx.fillStyle = "#020617"; // tailwind slate-950
+      ctx.fillStyle = "#f8fafc"; // slate-50
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Draw connections
@@ -67,12 +69,11 @@ export default function InteractiveBackground() {
           const dy = p1.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 120) {
+          if (dist < 150) {
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            // 0, 102, 255 for a medical blue
-            ctx.strokeStyle = `rgba(37, 99, 235, ${0.15 - dist / 800})`; // Tailwind blue-600
+            ctx.strokeStyle = `rgba(37, 99, 235, ${0.08 - dist / 1875})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
@@ -100,7 +101,7 @@ export default function InteractiveBackground() {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(147, 197, 253, 0.5)"; // Tailwind blue-300
+        ctx.fillStyle = "rgba(219, 234, 254, 0.6)";
         ctx.fill();
       });
 
@@ -111,8 +112,8 @@ export default function InteractiveBackground() {
 
     return () => {
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", () => {});
-      window.removeEventListener("touchmove", () => {});
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       cancelAnimationFrame(animationFrame);
     };
   }, []);
@@ -120,7 +121,7 @@ export default function InteractiveBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full object-cover -z-10 pointer-events-none opacity-50"
+      className="absolute inset-0 w-full h-full object-cover -z-10 pointer-events-none"
     />
   );
 }
