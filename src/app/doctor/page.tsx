@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
-import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle, TrendingUp, CalendarDays, Clock, ClipboardList, TestTube } from "lucide-react";
+import { Search, UserRound, FileText, Activity, Pill, Beaker, UserPlus, AlertTriangle, TrendingUp, CalendarDays, Clock, ClipboardList, TestTube, Users, Archive, Send, FileCheck } from "lucide-react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { PatientHeaderBar } from "@/components/patient/PatientHeaderBar";
@@ -14,7 +14,7 @@ import { CompteRenduForm } from "@/components/clinical/CompteRenduForm";
 import { LabOrderForm } from "@/components/clinical/LabOrderForm";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 
-type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "timeline";
+type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "timeline" | "referral" | "cross_patient" | "archive";
 
 // Enriched patient type from listMyPatients
 interface EnrichedPatient {
@@ -103,13 +103,40 @@ export default function DoctorPage() {
             <UserPlus size={16} /> Assign Patient
           </Button>
           {selectedPatient && (
-            <Button
-              variant="ghost"
-              className={`font-bold ${activeView === "timeline" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
-              onPress={() => setActiveView(activeView === "timeline" ? "list" : "timeline")}
-            >
-              <CalendarDays size={16} /> Timeline
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                className={`font-bold ${activeView === "timeline" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
+                onPress={() => setActiveView(activeView === "timeline" ? "list" : "timeline")}
+              >
+                <CalendarDays size={16} /> Timeline
+              </Button>
+              <Button
+                variant="ghost"
+                className={`font-bold ${activeView === "referral" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
+                onPress={() => setActiveView(activeView === "referral" ? "list" : "referral")}
+              >
+                <Send size={16} /> Referral
+              </Button>
+            </div>
+          )}
+          {!selectedPatient && (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                className={`font-bold ${activeView === "cross_patient" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
+                onPress={() => setActiveView(activeView === "cross_patient" ? "list" : "cross_patient")}
+              >
+                <Users size={16} /> Ward Vitals
+              </Button>
+              <Button
+                variant="ghost"
+                className={`font-bold ${activeView === "archive" ? "bg-slate-900 text-white" : "text-slate-600 border border-slate-200"}`}
+                onPress={() => setActiveView(activeView === "archive" ? "list" : "archive")}
+              >
+                <Archive size={16} /> Archive
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -380,6 +407,118 @@ export default function DoctorPage() {
             </Card>
           </div>
         </div>
+      )}
+
+      {/* Referral System */}
+      {selectedPatient && activeView === "referral" && (
+        <Card className="border border-slate-200 shadow-sm">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Send size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-900">Referral Letter</h2>
+                <p className="text-xs text-slate-500">Structured referral to another speciality or external clinic</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                <option value="">Select referral type...</option>
+                <option value="internal">Internal — Another Speciality</option>
+                <option value="external">External — Another Clinic</option>
+                <option value="urgent">Urgent Referral</option>
+              </select>
+              <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                <option value="">Select receiving speciality...</option>
+                <option value="cardiology">Cardiology</option>
+                <option value="neurology">Neurology</option>
+                <option value="orthopedics">Orthopedics</option>
+                <option value="dermatology">Dermatology</option>
+                <option value="ophthalmology">Ophthalmology</option>
+              </select>
+              <textarea className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none min-h-[120px]" placeholder="Referral reason and clinical context..." />
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" className="font-bold" onPress={() => setActiveView("list")}>Cancel</Button>
+                <Button className="font-bold bg-blue-600 text-white">
+                  <FileCheck size={14} /> Generate Referral Letter
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Cross-Patient Vitals Comparison */}
+      {activeView === "cross_patient" && (
+        <Card className="border border-slate-200 shadow-sm">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <Users size={18} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-900">Ward Vitals Overview</h2>
+                  <p className="text-xs text-slate-500">Compare key vitals across all assigned patients</p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-3 px-2 font-black text-slate-400 text-[10px] uppercase">Patient</th>
+                    <th className="text-center py-3 px-2 font-black text-slate-400 text-[10px] uppercase">BP</th>
+                    <th className="text-center py-3 px-2 font-black text-slate-400 text-[10px] uppercase">HR</th>
+                    <th className="text-center py-3 px-2 font-black text-slate-400 text-[10px] uppercase">Temp</th>
+                    <th className="text-center py-3 px-2 font-black text-slate-400 text-[10px] uppercase">SpO2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patients.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400">No patients to display</td>
+                    </tr>
+                  ) : (
+                    patients.map((p) => (
+                      <tr key={p._id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-2 font-bold text-slate-900">{p.first_name} {p.last_name}</td>
+                        <td className="py-3 px-2 text-center font-mono text-slate-600">--/--</td>
+                        <td className="py-3 px-2 text-center font-mono text-slate-600">--</td>
+                        <td className="py-3 px-2 text-center font-mono text-slate-600">--</td>
+                        <td className="py-3 px-2 text-center font-mono text-slate-600">--%</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-slate-400">Vitals will populate as nursing staff and doctors record readings.</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Inactive Patient Archive */}
+      {activeView === "archive" && (
+        <Card className="border border-slate-200 shadow-sm">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Archive size={18} className="text-slate-600" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-900">Inactive Patient Archive</h2>
+                <p className="text-xs text-slate-500">Patients not seen in 12+ months</p>
+              </div>
+            </div>
+            <div className="py-12 text-center text-slate-400">
+              <Archive size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">No archived patients</p>
+              <p className="text-xs text-slate-400 mt-1">Patients inactive for 12+ months will appear here. Records are preserved in full.</p>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* Patient Search Modal */}

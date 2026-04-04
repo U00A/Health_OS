@@ -24,6 +24,8 @@ import {
   MessageSquare,
   Bell,
   Download,
+  Printer,
+  Send,
 } from "lucide-react";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -253,9 +255,14 @@ export default function PatientPortal() {
                           {new Date(img._creationTime).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button size="sm" variant="ghost" className="font-bold text-blue-600">
-                        <Download size={14} /> View
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" className="font-bold text-blue-600">
+                          <Download size={14} /> View
+                        </Button>
+                        <Button size="sm" variant="ghost" className="font-bold text-slate-600" onPress={() => window.print()}>
+                          <Printer size={14} /> Print
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -293,6 +300,11 @@ export default function PatientPortal() {
                       {cr.treatment_plan && (
                         <p className="text-xs text-slate-600 mt-2">{cr.treatment_plan}</p>
                       )}
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" variant="ghost" className="font-bold text-slate-600" onPress={() => window.print()}>
+                          <Printer size={14} /> Print Report
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -435,14 +447,45 @@ export default function PatientPortal() {
       case "messages":
         return (
           <Card className="border border-slate-200 shadow-sm">
-            <div className="p-6">
+            <div className="p-6 space-y-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
                   <MessageSquare size={20} />
                 </div>
                 <h2 className="text-xl font-bold tracking-tight text-slate-900">Messages</h2>
               </div>
-              <div className="py-12 text-center text-slate-400">
+              {/* Structured Message to Private Doctor */}
+              <div className="border border-indigo-200 rounded-xl p-5 bg-indigo-50/30">
+                <h3 className="font-bold text-indigo-800 mb-3">Send Message to Your Doctor</h3>
+                <p className="text-xs text-indigo-600 mb-4">Use this form to send a structured symptom update to your enrolled private doctor.</p>
+                <div className="space-y-3">
+                  <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                    <option value="">Select symptom type...</option>
+                    <option value="pain">Pain</option>
+                    <option value="fever">Fever</option>
+                    <option value="fatigue">Fatigue</option>
+                    <option value="nausea">Nausea</option>
+                    <option value="breathing">Breathing Difficulty</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <div className="flex items-center gap-3">
+                    <label className="text-sm font-medium text-slate-600">Severity (1-5):</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button key={n} className={`w-8 h-8 rounded-lg font-bold text-sm border ${n <= 2 ? 'bg-emerald-100 border-emerald-200 text-emerald-700' : n <= 3 ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-red-100 border-red-200 text-red-700'}`}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input type="text" placeholder="Duration (e.g., 3 days)" className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none" />
+                  <textarea placeholder="Additional notes (optional)" className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none min-h-[80px]" />
+                  <Button className="font-bold bg-indigo-600 text-white">
+                    <Send size={14} /> Send Message
+                  </Button>
+                </div>
+              </div>
+              <div className="py-8 text-center text-slate-400">
                 <MessageSquare size={32} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm font-medium">No messages yet</p>
               </div>

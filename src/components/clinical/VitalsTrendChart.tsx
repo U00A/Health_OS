@@ -14,6 +14,8 @@ interface VitalsTrendChartProps {
   normalRange: [number, number];
   criticalRange?: [number, number];
   maxPoints?: number;
+  patientAge?: number;
+  patientSex?: "male" | "female";
 }
 
 export function VitalsTrendChart({
@@ -24,6 +26,8 @@ export function VitalsTrendChart({
   normalRange,
   criticalRange,
   maxPoints = 20,
+  patientAge,
+  patientSex,
 }: VitalsTrendChartProps) {
   const vitals = useQuery(api.vitals.listByPatient, patientId ? { patient_id: patientId } : "skip");
 
@@ -35,6 +39,25 @@ export function VitalsTrendChart({
       </div>
     );
   }
+
+  // Demographic-adjusted reference ranges based on age and sex
+  const getAdjustedRange = (base: [number, number]): [number, number] => {
+    let adjusted = [...base] as [number, number];
+    // Age adjustments
+    if (metric === "systolic_bp" && patientAge && patientAge > 60) {
+      adjusted = [base[0] + 10, base[1] + 20]; // Elderly have higher normal BP
+    }
+    if (metric === "heart_rate" && patientAge && patientAge < 12) {
+      adjusted = [base[0] + 20, base[1] + 30]; // Children have higher HR
+    }
+    // Sex adjustments
+    if (metric === "temperature" && patientSex === "female") {
+      adjusted = [base[0] + 0.2, base[1] + 0.3]; // Slightly higher for females
+    }
+    return adjusted;
+  };
+
+  const adjustedNormalRange = getAdjustedRange(normalRange);
 
   // Filter and sort vitals with the specified metric
   const sortedVitals = vitals

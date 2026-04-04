@@ -6,7 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
   Building2, UserPlus, Users, FileText, Pill, Beaker,
-  AlertTriangle, UserRound, Plus, TrendingUp, Fingerprint, Eye, EyeOff
+  AlertTriangle, UserRound, Plus, TrendingUp, Fingerprint, Eye, EyeOff,
+  ClipboardList, Save, StickyNote, Calendar
 } from "lucide-react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -20,7 +21,7 @@ import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 import { SignalButton } from "@/components/clinical/SignalButton";
 import { BiometricGate } from "@/components/auth/BiometricGate";
 
-type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register" | "biometric_gate";
+type ActiveView = "list" | "prescription" | "compte_rendu" | "lab_order" | "register" | "biometric_gate" | "draft_prescription" | "templates" | "quick_note";
 type ConsultationMode = "absent" | "present" | null; // null = not yet determined
 
 interface EnrichedPatient {
@@ -176,30 +177,97 @@ export default function PrivatePage() {
           <Button className="font-bold bg-violet-600 text-white shadow-md shadow-violet-200" onPress={() => setActiveView("lab_order")}>
             <Beaker size={14} /> Order Lab
           </Button>
+          <Button variant="ghost" className="font-bold text-indigo-700 border border-indigo-200" onPress={() => setActiveView("quick_note")}>
+            <StickyNote size={14} /> Quick Note
+          </Button>
           <SignalButton patientId={selectedPatient._id as Id<"patients">} doctorBetterAuthId={betterAuthId} />
         </div>
       )}
 
-      {/* Patient-Absent Mode Notice */}
-      {selectedPatient && activeView === "list" && isAbsentMode && (
-        <Card className="border border-amber-200 bg-amber-50/50 shadow-none">
-          <div className="p-5 flex items-start gap-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-              <EyeOff size={18} className="text-amber-600" />
+      {/* Patient-Absent Mode Actions */}
+      {selectedPatient && activeView === "list" && isAbsentMode && betterAuthId && (
+        <div className="flex gap-3 flex-wrap">
+          <Button variant="ghost" className="font-bold text-amber-700 border border-amber-200" onPress={() => setActiveView("draft_prescription")}>
+            <Save size={14} /> Draft Prescription
+          </Button>
+          <Button variant="ghost" className="font-bold text-amber-700 border border-amber-200" onPress={() => setActiveView("templates")}>
+            <ClipboardList size={14} /> My Templates
+          </Button>
+        </div>
+      )}
+
+      {/* Draft Prescription Form — Available in absent mode */}
+      {selectedPatient && activeView === "draft_prescription" && betterAuthId && (
+        <Card className="border border-amber-200 bg-amber-50/30 shadow-lg">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Save size={18} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="font-bold text-amber-800">Draft Prescription</h2>
+                <p className="text-xs text-amber-600">This prescription will be saved as a draft and cannot be submitted until a patient-present session is opened.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-amber-800 text-sm mb-1">Restricted View — Patient Not Present</h3>
-              <p className="text-xs text-amber-600 leading-relaxed">
-                You are viewing only your own Comptes Rendus, prescriptions, and lab results. 
-                To access the patient's complete clinical record, open a patient-present consultation 
-                with biometric confirmation.
-              </p>
-              <Button
-                size="sm"
-                className="mt-3 font-bold bg-emerald-600 text-white"
-                onPress={() => setActiveView("biometric_gate")}
-              >
-                <Fingerprint size={14} /> Start Consultation
+            <PrescriptionForm 
+              patient={selectedPatient} 
+              betterAuthId={betterAuthId} 
+              onSuccess={() => setActiveView("list")} 
+              onCancel={() => setActiveView("list")} 
+            />
+          </div>
+        </Card>
+      )}
+
+      {/* Consultation Templates */}
+      {activeView === "templates" && betterAuthId && (
+        <Card className="border border-slate-200 shadow-sm">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <ClipboardList size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-900">Consultation Templates</h2>
+                  <p className="text-xs text-slate-500">Personal CR templates per speciality or condition type</p>
+                </div>
+              </div>
+              <Button size="sm" className="font-bold bg-blue-600 text-white">
+                <Plus size={14} /> New Template
+              </Button>
+            </div>
+            <div className="py-12 text-center text-slate-400">
+              <ClipboardList size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">No templates created yet</p>
+              <p className="text-xs text-slate-400 mt-1">Create templates to pre-fill structured fields during consultations</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Quick In-Consultation Note */}
+      {selectedPatient && activeView === "quick_note" && betterAuthId && consultationMode === "present" && (
+        <Card className="border border-indigo-200 bg-indigo-50/30 shadow-lg">
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                  <StickyNote size={18} className="text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-indigo-800">Quick Consultation Note</h2>
+                  <p className="text-xs text-indigo-600">Private scratchpad — auto-cleared after CR is published</p>
+                </div>
+              </div>
+            </div>
+            <textarea
+              className="w-full p-4 rounded-xl border border-indigo-200 bg-white text-sm font-medium outline-none focus:border-indigo-400 min-h-[120px]"
+              placeholder="Type your quick notes here..."
+            />
+            <div className="flex justify-end">
+              <Button size="sm" className="font-bold bg-indigo-600 text-white">
+                <Save size={14} /> Save Note
               </Button>
             </div>
           </div>

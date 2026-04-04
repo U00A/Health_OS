@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp, Clock, Pill, CalendarDays, AlertTriangle, CheckSquare, Square, LogOut } from "lucide-react";
+import { BedDouble, UserPlus, ClipboardList, HeartPulse, AlertCircle, Send, TrendingUp, Clock, Pill, CalendarDays, AlertTriangle, CheckSquare, Square, LogOut, Users, Package, MessageSquare } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -11,7 +11,7 @@ import { PatientSearchModal } from "@/components/clinical/PatientSearchModal";
 import { VitalsEntryForm } from "@/components/clinical/VitalsEntryForm";
 import { RegisterPatientForm } from "@/components/clinical/RegisterPatientForm";
 
-type StaffView = "main" | "admit" | "vitals" | "register" | "log_entry" | "discharge";
+type StaffView = "main" | "admit" | "vitals" | "register" | "log_entry" | "discharge" | "roster" | "supply" | "handover";
 
 export default function StaffDashboard() {
   const betterAuthId = useBetterAuthId();
@@ -52,6 +52,16 @@ export default function StaffDashboard() {
     dischargeSummaryPrinted: false,
     bedCleared: false,
   });
+
+  // Supply request state
+  const [supplyItem, setSupplyItem] = useState("");
+  const [supplyQuantity, setSupplyQuantity] = useState(1);
+  const [supplyUrgency, setSupplyUrgency] = useState<"low" | "medium" | "high">("medium");
+  const [supplyNotes, setSupplyNotes] = useState("");
+
+  // Shift handover state
+  const [handoverNotes, setHandoverNotes] = useState("");
+  const [handoverPatientId, setHandoverPatientId] = useState<string>("");
 
   // Case entry
   const [entryType, setEntryType] = useState<"observation" | "nursing_note" | "escalation" | "procedure" | "general">("observation");
@@ -166,6 +176,45 @@ export default function StaffDashboard() {
     }
   };
 
+  // Supply request handler
+  const handleSupplyRequest = async () => {
+    if (!betterAuthId || !firstWardId || !supplyItem.trim()) return;
+    try {
+      // Log as case entry for now
+      await createEntry({
+        betterAuthId,
+        ward_id: firstWardId,
+        entry_type: "general",
+        notes: `Supply request: ${supplyItem} x${supplyQuantity} (${supplyUrgency}) - ${supplyNotes}`,
+      });
+      setSupplyItem("");
+      setSupplyQuantity(1);
+      setSupplyNotes("");
+      setActiveView("main");
+    } catch (e: unknown) {
+      alert((e as Error).message);
+    }
+  };
+
+  // Shift handover handler
+  const handleHandover = async () => {
+    if (!betterAuthId || !firstWardId || !handoverNotes.trim()) return;
+    try {
+      await createEntry({
+        betterAuthId,
+        ward_id: firstWardId,
+        entry_type: "general" as const,
+        notes: `Shift handover: ${handoverNotes}`,
+        patient_id: handoverPatientId as Id<"patients"> | undefined,
+      });
+      setHandoverNotes("");
+      setHandoverPatientId("");
+      setActiveView("main");
+    } catch (e: unknown) {
+      alert((e as Error).message);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
@@ -185,6 +234,15 @@ export default function StaffDashboard() {
           </Button>
           <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("discharge")}>
             <LogOut size={16} /> Discharge
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("roster")}>
+            <Users size={16} /> On-Duty
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("supply")}>
+            <Package size={16} /> Supplies
+          </Button>
+          <Button variant="ghost" className="font-bold border border-slate-200" onPress={() => setActiveView("handover")}>
+            <MessageSquare size={16} /> Handover
           </Button>
         </div>
       </div>
@@ -610,6 +668,158 @@ export default function StaffDashboard() {
             </Card>
           </div>
         </div>
+      )}
+
+      {/* On-Duty Roster */}
+      {activeView === "roster" && (
+        <Card className="border border-sky-200 shadow-lg bg-sky-50/30">
+          <div className="p-6 space-y-5">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <Users size={18} className="text-sky-600" /> On-Duty Roster
+            </h2>
+            <div className="space-y-3">
+              <div className="bg-white border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900">Dr. {user?.name || "Unknown"}</p>
+                    <p className="text-sm text-slate-500">Medical Staff — {wards && wards.length > 0 ? wards[0].name : "Loading..."}</p>
+                  </div>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold">On Duty</Chip>
+                </div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900">Dr. Ahmed Benali</p>
+                    <p className="text-sm text-slate-500">State Doctor — Internal Medicine</p>
+                  </div>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold">On Duty</Chip>
+                </div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-slate-900">Nurse Fatima Zohra</p>
+                    <p className="text-sm text-slate-500">Medical Staff — {wards && wards.length > 0 ? wards[0].name : "Loading..."}</p>
+                  </div>
+                  <Chip size="sm" color="success" variant="soft" className="font-bold">On Duty</Chip>
+                </div>
+              </div>
+            </div>
+            <Button variant="ghost" className="font-bold" onPress={() => setActiveView("main")}>Back to Ward</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Supply Request */}
+      {activeView === "supply" && (
+        <Card className="border border-amber-200 shadow-lg bg-amber-50/30">
+          <div className="p-6 space-y-5">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <Package size={18} className="text-amber-600" /> Supply Request
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Item Name</label>
+                <input
+                  type="text"
+                  value={supplyItem}
+                  onChange={(e) => setSupplyItem(e.target.value)}
+                  placeholder="e.g. IV fluids, syringes, gloves"
+                  className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-amber-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Quantity</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={supplyQuantity}
+                    onChange={(e) => setSupplyQuantity(parseInt(e.target.value) || 1)}
+                    className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Urgency</label>
+                  <div className="flex gap-2">
+                    {(["low", "medium", "high"] as const).map((u) => (
+                      <button
+                        key={u}
+                        onClick={() => setSupplyUrgency(u)}
+                        className={`flex-1 p-3 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all ${
+                          supplyUrgency === u
+                            ? u === "high" ? "bg-red-600 text-white border-red-600" : u === "medium" ? "bg-amber-600 text-white border-amber-600" : "bg-emerald-600 text-white border-emerald-600"
+                            : "bg-white border-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Notes</label>
+                <textarea
+                  rows={2}
+                  value={supplyNotes}
+                  onChange={(e) => setSupplyNotes(e.target.value)}
+                  placeholder="Additional details..."
+                  className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none resize-none focus:border-amber-500"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button className="font-bold bg-amber-600 text-white shadow-md" onPress={handleSupplyRequest} isDisabled={!supplyItem.trim()}>
+                  <Send size={14} /> Submit Request
+                </Button>
+                <Button variant="ghost" className="font-bold" onPress={() => setActiveView("main")}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Shift Handover */}
+      {activeView === "handover" && (
+        <Card className="border border-violet-200 shadow-lg bg-violet-50/30">
+          <div className="p-6 space-y-5">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <MessageSquare size={18} className="text-violet-600" /> Shift Handover Note
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Patient (optional)</label>
+                <select
+                  value={handoverPatientId}
+                  onChange={(e) => setHandoverPatientId(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none focus:border-violet-500"
+                >
+                  <option value="">All patients</option>
+                  {admissions?.map((a) => (
+                    <option key={a._id} value={a.patient_id}>{a.patientName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Handover Notes</label>
+                <textarea
+                  rows={6}
+                  value={handoverNotes}
+                  onChange={(e) => setHandoverNotes(e.target.value)}
+                  placeholder="Key events, outstanding tasks, patient concerns for incoming shift..."
+                  className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none resize-none focus:border-violet-500"
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button className="font-bold bg-violet-600 text-white shadow-md" onPress={handleHandover} isDisabled={!handoverNotes.trim()}>
+                  <Send size={14} /> Submit Handover
+                </Button>
+                <Button variant="ghost" className="font-bold" onPress={() => setActiveView("main")}>Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* Patient Search Modal */}

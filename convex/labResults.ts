@@ -143,6 +143,29 @@ export const listByOrder = query({
   },
 });
 
+export const listByLab = query({
+  args: { betterAuthId: v.string() },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["laboratory"], args.betterAuthId);
+    const results = await ctx.db
+      .query("lab_results")
+      .order("desc")
+      .take(50);
+
+    // Enrich with patient names
+    const enriched = await Promise.all(
+      results.map(async (r) => {
+        const patient = await ctx.db.get(r.patient_id);
+        return {
+          ...r,
+          patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Unknown",
+        };
+      })
+    );
+    return enriched;
+  }
+});
+
 export const listByPatient = query({
   args: { patient_id: v.id("patients") },
   handler: async (ctx, args) => {

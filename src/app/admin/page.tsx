@@ -3,8 +3,10 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
-import { Users, Server, ShieldAlert, Activity, UserPlus, HardDrive, RefreshCw, Hospital, BedDouble, Stethoscope, UserCheck, Pill, Beaker } from "lucide-react";
+import { Users, Server, ShieldAlert, Activity, UserPlus, HardDrive, RefreshCw, Hospital, BedDouble, Stethoscope, UserCheck, Pill, Beaker, FileText, Search, CalendarDays, DollarSign } from "lucide-react";
 import { useState } from "react";
+
+type AdminTab = "console" | "patients" | "admissions" | "billing";
 
 export default function AdminPage() {
   const initStatus = useQuery(api.init.checkInit);
@@ -14,6 +16,8 @@ export default function AdminPage() {
   const admissions = useQuery(api.admissions.listAllActive);
   const prescriptions = useQuery(api.prescriptions.listAllActive);
   const labOrders = useQuery(api.labOrders.listAllPending);
+  const [activeTab, setActiveTab] = useState<AdminTab>("console");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const seedUsers = useMutation(api.authSeeds.seedDemoUsers);
   const masterInit = useMutation(api.init.masterInit);
@@ -66,6 +70,16 @@ export default function AdminPage() {
     { label: "Pending Lab Orders", value: labOrders?.length?.toString() || "0", icon: Beaker, color: "warning" },
     { label: "Specialities", value: initStatus?.counts.specialities?.toString() || "0", icon: Stethoscope, color: "primary" },
   ];
+
+  // Filter admissions by search query
+  const filteredAdmissions = admissions?.filter((a) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      a.patientName?.toLowerCase().includes(q) ||
+      a.patientNationalId?.includes(q)
+    );
+  }) || [];
 
   const roleColors: Record<string, string> = {
     admin: "bg-red-100 text-red-700 border-red-200",
@@ -147,6 +161,137 @@ export default function AdminPage() {
             <p className="text-sm font-medium text-blue-700">{initMessage}</p>
           </div>
         </Card>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex gap-2">
+        {[
+          { key: "console" as const, label: "Console", icon: Server },
+          { key: "admissions" as const, label: "Admissions", icon: CalendarDays },
+          { key: "billing" as const, label: "Billing", icon: DollarSign },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === tab.key
+                ? "bg-slate-900 text-white shadow-md"
+                : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
+            }`}
+          >
+            <tab.icon size={16} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Admissions Tab - Civil Data Only (Section 5) */}
+      {activeTab === "admissions" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by patient name or national ID..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium outline-none focus:border-slate-400"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAdmissions.length === 0 ? (
+              <Card className="col-span-full border border-dashed border-slate-200 shadow-none bg-slate-50">
+                <div className="p-12 text-center">
+                  <CalendarDays size={48} className="mx-auto text-slate-300 mb-4" />
+                  <h3 className="font-bold text-slate-700 text-lg mb-2">No Admissions Found</h3>
+                  <p className="text-slate-500 text-sm font-medium">Admissions will appear here when patients are admitted.</p>
+                </div>
+              </Card>
+            ) : (
+              filteredAdmissions.map((a) => (
+                <Card key={a._id} className="border border-slate-200 shadow-sm">
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-slate-900 text-lg">{a.patientName}</h3>
+                      <Chip size="sm" color="success" variant="soft" className="font-bold">Active</Chip>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">National ID</span>
+                        <span className="font-mono font-bold text-slate-900">{a.patientNationalId || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Admission Date</span>
+                        <span className="font-bold text-slate-900">{new Date(a.admitted_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Ward</span>
+                        <span className="font-bold text-slate-900">{(a as any).wardName || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Bed</span>
+                        <span className="font-bold text-slate-900">{a.bedName || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Admission Type</span>
+                        <span className="font-bold text-slate-900 capitalize">{a.admission_type || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Billing Tab - Civil Data Only (Section 5) */}
+      {activeTab === "billing" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-5 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                  <DollarSign size={18} />
+                </div>
+                <span className="text-sm font-medium text-slate-500">Total Admissions</span>
+              </div>
+              <p className="text-3xl font-black text-slate-900">{admissions?.length || 0}</p>
+              <p className="text-xs text-slate-400 mt-1">This month</p>
+            </Card>
+            <Card className="p-5 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                  <BedDouble size={18} />
+                </div>
+                <span className="text-sm font-medium text-slate-500">Avg Stay</span>
+              </div>
+              <p className="text-3xl font-black text-slate-900">--</p>
+              <p className="text-xs text-slate-400 mt-1">Days per admission</p>
+            </Card>
+            <Card className="p-5 border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                  <Activity size={18} />
+                </div>
+                <span className="text-sm font-medium text-slate-500">Occupancy</span>
+              </div>
+              <p className="text-3xl font-black text-slate-900">
+                {beds ? Math.round((beds.filter((b: { status: string }) => b.status === "occupied").length / beds.length) * 100) : 0}%
+              </p>
+              <p className="text-xs text-slate-400 mt-1">Current rate</p>
+            </Card>
+          </div>
+          <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
+            <div className="p-12 text-center">
+              <DollarSign size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="font-bold text-slate-700 text-lg mb-2">Billing Module</h3>
+              <p className="text-slate-500 text-sm font-medium">Billing entries linked to admissions will appear here. Service categories only — no clinical detail.</p>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* Stats Grid */}

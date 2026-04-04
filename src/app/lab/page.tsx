@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Microscope, Beaker, FlaskConical, UploadCloud, FileText, Clock, CheckCircle2, Inbox, AlertTriangle, AlertCircle, TrendingUp, BarChart3, ClipboardList, TestTube } from "lucide-react";
+import { Microscope, Beaker, FlaskConical, UploadCloud, FileText, Clock, CheckCircle2, Inbox, AlertTriangle, AlertCircle, TrendingUp, BarChart3, ClipboardList, TestTube, Grid3X3 } from "lucide-react";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { LabResultEntryForm } from "@/components/clinical/LabResultEntryForm";
@@ -11,10 +11,13 @@ import { LabResultEntryForm } from "@/components/clinical/LabResultEntryForm";
 export default function LabPage() {
   const betterAuthId = useBetterAuthId();
   const orders = useQuery(api.labOrders.listPendingOrders, betterAuthId ? { betterAuthId } : "skip");
+  const completedResults = useQuery(api.labResults.listByLab, betterAuthId ? { betterAuthId } : "skip");
   const updateStatus = useMutation(api.labOrders.updateStatus);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [selectedCompletedResult, setSelectedCompletedResult] = useState<string | null>(null);
   const [showCriticalAlert, setShowCriticalAlert] = useState<{ patientName: string; analysisType: string; values: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"queue" | "completed" | "stats">("queue");
+  const [activeTab, setActiveTab] = useState<"queue" | "completed" | "stats" | "batch">("queue");
+  const [amendmentOrderId, setAmendmentOrderId] = useState<string | null>(null);
  
   const selectedOrderData = orders?.find((o) => o._id === selectedOrder);
 
@@ -54,6 +57,7 @@ export default function LabPage() {
       <div className="flex gap-2">
         {[
           { key: "queue" as const, label: "Order Queue", icon: Inbox },
+          { key: "batch" as const, label: "Batch Entry", icon: Grid3X3 },
           { key: "completed" as const, label: "Completed", icon: CheckCircle2 },
           { key: "stats" as const, label: "Workload Stats", icon: BarChart3 },
         ].map((tab) => (
@@ -173,14 +177,63 @@ export default function LabPage() {
             <CheckCircle2 size={20} className="text-emerald-600" />
             Completed Results
           </h2>
-          <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
-            <div className="p-12 text-center">
-              <ClipboardList size={48} className="mx-auto text-slate-300 mb-4" />
-              <h3 className="font-bold text-slate-700 text-lg mb-2">No Completed Results</h3>
-              <p className="text-slate-500 text-sm font-medium">Completed results will appear here.</p>
-            </div>
-          </Card>
+          {completedResults === undefined ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
+          ) : completedResults.length === 0 ? (
+            <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
+              <div className="p-12 text-center">
+                <ClipboardList size={48} className="mx-auto text-slate-300 mb-4" />
+                <h3 className="font-bold text-slate-700 text-lg mb-2">No Completed Results</h3>
+                <p className="text-slate-500 text-sm font-medium">Completed results will appear here.</p>
+              </div>
+            </Card>
+          ) : (
+            completedResults.map((r) => (
+              <Card key={r._id} className="border border-emerald-200 shadow-sm">
+                <div className="p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">{(r as any).patientName || "Unknown Patient"}</p>
+                      <p className="text-xs text-slate-500">Uploaded {new Date(r.uploaded_at).toLocaleString()}</p>
+                      {r.is_amendment && (
+                        <Chip size="sm" color="warning" variant="soft" className="text-[9px] font-black uppercase mt-1">Amendment</Chip>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" className="font-bold text-violet-600" onPress={() => setAmendmentOrderId(r.order_id)}>
+                      <FileText size={14} /> Amend
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
+      )}
+
+      {/* Amendment Form */}
+      {amendmentOrderId && (
+        <Card className="border border-amber-200 shadow-lg bg-amber-50/30">
+          <div className="p-6 space-y-4">
+            <h2 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+              <FileText size={18} className="text-amber-600" /> Amend Result
+            </h2>
+            <p className="text-sm text-slate-600">Submit a correction. The original result will be preserved and the amendment will be linked.</p>
+            <LabResultEntryForm
+              orderId={amendmentOrderId}
+              analysisType="Amendment"
+              patientName="Amendment"
+              betterAuthId={betterAuthId!}
+              onSuccess={() => { setAmendmentOrderId(null); }}
+              onCancel={() => setAmendmentOrderId(null)}
+              onCriticalAlert={handleCriticalValueAlert}
+            />
+          </div>
+        </Card>
       )}
 
       {/* Workload Stats Tab */}
@@ -198,7 +251,7 @@ export default function LabPage() {
                     <TrendingUp size={16} className="text-emerald-600" />
                     <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Completed Today</span>
                   </div>
-                  <div className="text-3xl font-black text-slate-900">0</div>
+                  <div className="text-3xl font-black text-slate-900">{completedResults?.length || 0}</div>
                 </div>
               </Card>
               <Card className="border border-slate-200 bg-white">
@@ -221,6 +274,36 @@ export default function LabPage() {
               </Card>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Batch Entry Tab */}
+      {activeTab === "batch" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <Grid3X3 size={20} className="text-violet-600" />
+            Batch Result Entry
+          </h2>
+          <Card className="border border-dashed border-slate-200 shadow-none bg-slate-50">
+            <div className="p-12 text-center">
+              <Grid3X3 size={48} className="mx-auto text-slate-300 mb-4" />
+              <h3 className="font-bold text-slate-700 text-lg mb-2">Batch Entry Grid</h3>
+              <p className="text-slate-500 text-sm font-medium">Select a panel type and enter results for multiple patients simultaneously.</p>
+              <div className="mt-6 max-w-md mx-auto space-y-4">
+                <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                  <option value="">Select panel type...</option>
+                  <option value="cbc">Complete Blood Count (CBC)</option>
+                  <option value="metabolic">Metabolic Panel</option>
+                  <option value="lipid">Lipid Panel</option>
+                  <option value="glucose">Blood Glucose</option>
+                </select>
+                <Button className="w-full font-bold bg-violet-600 text-white" isDisabled>
+                  Load Patient Grid
+                </Button>
+                <p className="text-xs text-slate-400">Pending orders for the selected panel will appear in a grid for rapid entry.</p>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 

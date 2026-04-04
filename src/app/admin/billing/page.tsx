@@ -6,7 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { Card, Button, Chip, Spinner } from "@heroui/react";
-import { DollarSign, UserSearch, Plus, Calendar, Clock, CheckCircle, XCircle, BarChart3 } from "lucide-react";
+import { DollarSign, UserSearch, Plus, Calendar, Clock, CheckCircle, XCircle, BarChart3, FileText, Printer, Download } from "lucide-react";
 
 export default function AdminBillingPage() {
   const betterAuthId = useBetterAuthId();
@@ -242,6 +242,55 @@ export default function AdminBillingPage() {
         </Card>
       )}
 
+      {/* Document Generation */}
+      <Card className="border border-slate-200 shadow-sm">
+        <div className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <FileText size={20} className="text-slate-500" />
+            <h3 className="font-bold text-slate-900">Document Generation</h3>
+          </div>
+          <p className="text-xs text-slate-500 mb-4">Generate civil administrative documents as printable PDFs</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/30 transition-all text-left"
+            >
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <FileText size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 text-sm">Admission Certificate</p>
+                <p className="text-xs text-slate-500">Patient name, ward, admission date</p>
+              </div>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-emerald-300 hover:bg-emerald-50/30 transition-all text-left"
+            >
+              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <Printer size={18} className="text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 text-sm">Discharge Summary</p>
+                <p className="text-xs text-slate-500">Civil header only, no clinical content</p>
+              </div>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-violet-300 hover:bg-violet-50/30 transition-all text-left"
+            >
+              <div className="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                <Download size={18} className="text-violet-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900 text-sm">Billing Statement</p>
+                <p className="text-xs text-slate-500">Full billing history with payment status</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </Card>
+
       {/* Active Admissions */}
       <Card className="border border-slate-200 shadow-sm">
         <div className="p-5">
@@ -267,9 +316,14 @@ export default function AdminBillingPage() {
                       </span>
                     </div>
                   </div>
-                  <Chip size="sm" variant="soft" color="success" className="font-bold text-[9px] uppercase tracking-wider">
-                    {a.status.replace("_", " ")}
-                  </Chip>
+                  <div className="flex items-center gap-2">
+                    <Chip size="sm" variant="soft" color="success" className="font-bold text-[9px] uppercase tracking-wider">
+                      {a.status.replace("_", " ")}
+                    </Chip>
+                    <Button size="sm" variant="ghost" className="font-bold text-slate-500" onPress={() => window.print()}>
+                      <Printer size={14} />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
