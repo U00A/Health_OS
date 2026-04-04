@@ -182,16 +182,16 @@ function RoleCard({ role, i }: { role: typeof roles[0]; i: number }) {
   return (
     <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeDelay(i)}>
       <Link href={role.link} className="group block h-full">
-        <div className="relative bg-white/70 backdrop-blur-md rounded-[2rem] p-8 md:p-10 border border-white border-b-slate-100 shadow-[0_8px_30px_-16px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] hover:border-blue-100 transition-all duration-500 h-full overflow-hidden flex flex-col">
+        <div className="relative bg-white/70 backdrop-blur-md rounded-3xl p-6 sm:p-8 lg:p-10 border border-slate-100 shadow-[0_8px_30px_-16px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] hover:border-blue-100 transition-all duration-500 h-full overflow-hidden flex flex-col">
           <div className="relative z-10 flex flex-col h-full">
-            <div className={`${role.bg} w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform`}>
-              <role.icon className={`w-6 h-6 ${role.color}`} />
+            <div className={`${role.bg} w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-105 transition-transform`}>
+              <role.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${role.color}`} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight mb-3">{role.title}</h3>
-            <p className="text-slate-500 leading-relaxed font-medium flex-1">{role.description}</p>
-            <div className="flex items-center gap-2 mt-6 font-bold text-sm group-hover:gap-3 transition-all">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">{role.title}</h3>
+            <p className="text-sm sm:text-base text-slate-500 leading-relaxed font-medium flex-1">{role.description}</p>
+            <div className="flex items-center gap-2 mt-4 sm:mt-6 font-bold text-xs sm:text-sm group-hover:gap-3 transition-all">
               <span className="text-slate-900">Launch Portal</span>
-              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function LandingPage() {
     { label: "Active Admissions", value: liveStats?.activeAdmissions ?? 0, icon: BedDouble },
   ];
 
-  const [scrolled , setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", handler, { passive: true });
@@ -223,27 +223,27 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 relative">
       {/* ═══ NAVBAR ═══ */}
-      <nav className={`fixed top-0 w-full z-60 transition-all duration-500 ${
-        scrolled ? "bg-white/70 backdrop-blur-3xl border-b border-white/50 py-3 shadow-sm shadow-blue-900/5" : "bg-transparent py-5"
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        scrolled ? "bg-white/90 backdrop-blur-2xl border-b border-slate-100 py-3 shadow-sm" : "bg-transparent py-4"
       }`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-              <Activity className="w-6 h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900">Health<span className="text-blue-600">OS</span></span>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">Health<span className="text-blue-600">OS</span></span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-500/80">
-            <a href="#ecosystem" className="hover:text-blue-600 transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-blue-300 hover:after:w-full after:transition-all">Ecosystem</a>
-            <a href="#features" className="hover:text-blue-600 transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-blue-300 hover:after:w-full after:transition-all">Features</a>
+          <div className="hidden md:flex items-center gap-10 text-[11px] font-bold uppercase tracking-[0.25em] text-slate-400">
+            <a href="#ecosystem" className="hover:text-blue-600 transition-colors">Ecosystem</a>
+            <a href="#features" className="hover:text-blue-600 transition-colors">Features</a>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors hidden sm:block">Sign in</Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-xs sm:text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors">Sign in</Link>
             <Link
               href="/login?flow=signUp"
-              className="bg-slate-900 text-white font-bold text-sm px-6 py-2.5 rounded-2xl hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-600/20 transition-all active:scale-95"
+              className="bg-slate-900 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 rounded-full hover:bg-blue-600 transition-colors shadow-sm"
             >
               Get Started
             </Link>
@@ -268,7 +268,7 @@ export default function LandingPage() {
                 <Globe className="w-4 h-4 text-blue-500" />
                 Next-Gen Healthcare Architecture
               </div>
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 leading-[0.93] mb-8">
+              <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 leading-[0.93] mb-6 sm:mb-8">
                 Operating System for <br />
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 drop-shadow-sm">
                   Modern Medicine.
