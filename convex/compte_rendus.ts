@@ -66,10 +66,8 @@ export const listByPatient = query({
 
     const results = await baseQuery.order("desc").collect();
     
-    const masked: Awaited<ReturnType<typeof maskDocumentDoctor>>[] = [];
-    for (const doc of results) {
-      masked.push(await maskDocumentDoctor(ctx, args.betterAuthId || null, doc));
-    }
-    return masked;
+    return Promise.all(
+      results.map((doc) => maskDocumentDoctor(ctx, args.betterAuthId || null, doc))
+    );
   },
 });
