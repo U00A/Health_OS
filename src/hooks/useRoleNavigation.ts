@@ -18,12 +18,12 @@ import {
  * Automatically filters navigation based on authenticated user's role.
  */
 export function useRoleNavigation() {
-  const betterAuthId = useBetterAuthId();
+  const authId = useBetterAuthId();
   
   // Fetch user from Convex to get role
   const user = useQuery(
     api.users.current,
-    betterAuthId ? { betterAuthId } : "skip"
+    authId ? { betterAuthId: authId } : "skip"
   );
 
   const role = (user?.role || "patient") as UserRole;

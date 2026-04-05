@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export function useBetterAuthId(): string | undefined {
-  const [betterAuthId, setBetterAuthId] = useState<string | undefined>(undefined);
+  const [authId, setAuthId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function fetchSession() {
@@ -11,13 +11,13 @@ export function useBetterAuthId(): string | undefined {
         const res = await fetch("/api/auth/session");
         const data = await res.json();
         // Prefer deterministic betterAuthId for Convex query compatibility
-        setBetterAuthId(data.user?.betterAuthId || data.user?.id);
+        setAuthId(data.user?.betterAuthId || data.user?.id);
       } catch {
-        setBetterAuthId(undefined);
+        setAuthId(undefined);
       }
     }
     fetchSession();
   }, []);
 
-  return betterAuthId;
+  return authId;
 }

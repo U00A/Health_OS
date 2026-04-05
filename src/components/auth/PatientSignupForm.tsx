@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 interface PatientSignupFormProps {
-  betterAuthId: string;
+  authId: string;
   defaultEmail?: string;
 }
 
@@ -53,7 +53,7 @@ const commonConditions = [
   "Kidney Disease",
 ];
 
-export function PatientSignupForm({ betterAuthId, defaultEmail }: PatientSignupFormProps) {
+export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormProps) {
   const router = useRouter();
   const selfRegister = useMutation(api.patients.selfRegister);
 
@@ -121,7 +121,7 @@ export function PatientSignupForm({ betterAuthId, defaultEmail }: PatientSignupF
 
       try {
         await selfRegister({
-          betterAuthId,
+          betterAuthId: authId,
           national_id: nationalId,
           first_name: firstName,
           last_name: lastName,
@@ -145,7 +145,7 @@ export function PatientSignupForm({ betterAuthId, defaultEmail }: PatientSignupF
     },
     [
       selfRegister,
-      betterAuthId,
+      authId,
       nationalId,
       firstName,
       lastName,

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser } from "./security";
 
 export const updateContactInfo = mutation({
   args: {
@@ -29,11 +29,7 @@ export const updateContactInfo = mutation({
 export const getMyProfile = query({
   args: { betterAuthId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId))
-      .first();
-
+    const user = await getUser(ctx, args.betterAuthId || "");
     if (!user) return null;
 
     // Only check role if user exists and has a role set
@@ -166,11 +162,8 @@ export const selfRegister = mutation({
   handler: async (ctx, args) => {
     const { betterAuthId, ...patientData } = args;
 
-    // Find the user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
-      .first();
+    // Find the user using robust lookup
+    const user = await getUser(ctx, betterAuthId);
 
     if (!user) {
       throw new Error("User account not found. Please sign in first.");
@@ -212,11 +205,7 @@ export const selfRegister = mutation({
 export const checkPatientProfile = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId))
-      .first();
-
+    const user = await getUser(ctx, args.betterAuthId);
     if (!user) return { exists: false };
 
     const patient = await ctx.db

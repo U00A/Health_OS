@@ -6,19 +6,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { PatientSignupForm } from "@/components/auth/PatientSignupForm";
 import { Spinner } from "@heroui/react";
+import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 
 function PatientSignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showSignup, setShowSignup] = useState(true);
   const [authComplete, setAuthComplete] = useState(true);
-  const [betterAuthId, setBetterAuthId] = useState(searchParams.get("auth_id") || "");
+  const sessionAuthId = useBetterAuthId();
+  const [internalAuthId, setInternalAuthId] = useState("");
+  
+  const authId = searchParams.get("auth_id") || sessionAuthId || internalAuthId || "";
 
   const listenForAuth = useCallback((e: Event) => {
     setShowSignup(true);
     const detail = (e as CustomEvent).detail as { betterAuthId?: string };
     if (detail?.betterAuthId) {
-      setBetterAuthId(detail.betterAuthId);
+      setInternalAuthId(detail.betterAuthId);
     }
   }, []);
 
@@ -103,7 +107,7 @@ function PatientSignupContent() {
 
               {/* Patient Signup Form */}
               <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-                <PatientSignupForm betterAuthId={betterAuthId || ""} />
+                <PatientSignupForm authId={authId} />
               </div>
             </>
           )}

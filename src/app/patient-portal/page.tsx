@@ -43,8 +43,8 @@ function PatientPortalContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const activeSection = (searchParams?.get("section") as PatientSection) || "dashboard";
-  const betterAuthId = useBetterAuthId();
-  const profile = useQuery(api.patients.getMyProfile, betterAuthId ? { betterAuthId } : "skip");
+  const authId = useBetterAuthId();
+  const profile = useQuery(api.patients.getMyProfile, authId ? { betterAuthId: authId } : "skip");
 
   // Always call hooks at the top level
   const prescriptions = useQuery(
