@@ -6,9 +6,9 @@ import { requireRole, getUser, maskDocumentDoctor } from "./security";
 // Triple-Write Storage Rule (Section 9.1)
 // Every uploaded result writes simultaneously to three scopes
 // in a single atomic transaction:
-//   1. Patient record — visible in their hub immediately
-//   2. Requesting doctor's scope — visible in their patient panel
-//   3. Issuing lab archive — for internal audit
+//   1. Patient record ??? visible in their hub immediately
+//   2. Requesting doctor's scope ??? visible in their patient panel
+//   3. Issuing lab archive ??? for internal audit
 // If ANY write fails, the entire transaction rolls back.
 // ============================================================
 
@@ -63,7 +63,7 @@ export const uploadResult = mutation({
     // ==========================================
     // WRITE 3: Create a result document entry visible in patient record
     // The patient sees results through lab_results -> by_patient index
-    // which already includes the patient_id field — this is automatic.
+    // which already includes the patient_id field ??? this is automatic.
     // But we also create a patient document entry for the document archive.
     // ==========================================
     // (Already handled by the lab_results.by_patient index above)

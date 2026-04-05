@@ -4,7 +4,7 @@ import { requireRole, getUser, isAdminRole } from "./security";
 
 // ============================================================
 // Billing Management (Section 5 - Administration Role)
-// Civil and billing data only — zero clinical access.
+// Civil and billing data only ??? zero clinical access.
 // ============================================================
 
 // Create a billing entry (admin role only)
@@ -146,7 +146,7 @@ export const getPatientCivilData = query({
     const patient = await ctx.db.get(args.patient_id);
     if (!patient) return null;
 
-    // Return ONLY civil data — no clinical fields
+    // Return ONLY civil data ??? no clinical fields
     return {
       _id: patient._id,
       first_name: patient.first_name,

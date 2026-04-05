@@ -59,9 +59,12 @@ export const listByPatient = query({
     }
 
     const results = await baseQuery.order("desc").collect();
-    
-    return await Promise.all(
-      results.map((doc) => maskDocumentDoctor(ctx, args.betterAuthId || null, doc))
-    );
-  },
-});
+
+    const enriched = [];
+    for (const doc of results) {
+      const masked = await maskDocumentDoctor(ctx, args.betterAuthId || null, doc);
+      enriched.push(masked);
+    }
+    return enriched;
+    },
+    });

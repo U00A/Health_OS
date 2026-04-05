@@ -173,7 +173,7 @@ export async function validateBiometricSession(
 // ============================================================
 // Programmatic Data Masking (Section 9.5)
 // Private doctor identities are masked from other private doctors
-// at the Convex query layer — not just UI layer.
+// at the Convex query layer ??? not just UI layer.
 // State doctors see full identity (public health oversight).
 // Patients see full identity (right to know who treated them).
 // ============================================================

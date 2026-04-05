@@ -261,7 +261,7 @@ export const getSignalFlagsForPatient = query({
       .order("desc")
       .collect();
 
-    // Always anonymised — sender is always "Treating Physician"
+    // Always anonymised ??? sender is always "Treating Physician"
     return flags.map((f) => ({
       ...f,
       doctorName: "Treating Physician",

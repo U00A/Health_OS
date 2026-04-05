@@ -4,7 +4,7 @@ import { Id, TableNames } from "./_generated/dataModel";
 
 /**
  * Master initialization function. Seeds everything needed for a working demo:
- * Hospital → Wards → Beds → Specialities → Demo Users → Demo Patients → Demo Prescriptions → Demo Lab Orders → Demo Case Entries
+ * Hospital ??? Wards ??? Beds ??? Specialities ??? Demo Users ??? Demo Patients ??? Demo Prescriptions ??? Demo Lab Orders ??? Demo Case Entries
  * Run via: npx convex run init:masterInit
  */
 export const masterInit = mutation({
@@ -49,10 +49,10 @@ export const masterInit = mutation({
 
     // 2. Seed specialities for this hospital
     const specialityNames = [
-      "Cardiologie", "Chirurgie Générale", "Pédiatrie",
-      "Gynécologie-Obstétrique", "Médecine Interne", "Neurologie",
-      "Orthopédie", "Pneumologie", "Radiologie", "Laboratoire",
-      "Urgences", "Anesthésie-Réanimation",
+      "Cardiologie", "Chirurgie G??n??rale", "P??diatrie",
+      "Gyn??cologie-Obst??trique", "M??decine Interne", "Neurologie",
+      "Orthop??die", "Pneumologie", "Radiologie", "Laboratoire",
+      "Urgences", "Anesth??sie-R??animation",
     ];
 
     const specialityIds: Id<"specialities">[] = [];
@@ -77,13 +77,13 @@ export const masterInit = mutation({
     // 3. Seed wards for this hospital
     const wardDefs = [
       { name: "Urgences", floor: "RDC", capacity: 20 },
-      { name: "Chirurgie A", floor: "1er Étage", capacity: 15 },
-      { name: "Chirurgie B", floor: "1er Étage", capacity: 15 },
-      { name: "Médecine Interne", floor: "2ème Étage", capacity: 20 },
-      { name: "Cardiologie", floor: "3ème Étage", capacity: 12 },
-      { name: "Pédiatrie", floor: "3ème Étage", capacity: 15 },
-      { name: "Réanimation", floor: "4ème Étage", capacity: 10 },
-      { name: "Maternité", floor: "4ème Étage", capacity: 18 },
+      { name: "Chirurgie A", floor: "1er ??tage", capacity: 15 },
+      { name: "Chirurgie B", floor: "1er ??tage", capacity: 15 },
+      { name: "M??decine Interne", floor: "2??me ??tage", capacity: 20 },
+      { name: "Cardiologie", floor: "3??me ??tage", capacity: 12 },
+      { name: "P??diatrie", floor: "3??me ??tage", capacity: 15 },
+      { name: "R??animation", floor: "4??me ??tage", capacity: 10 },
+      { name: "Maternit??", floor: "4??me ??tage", capacity: 18 },
     ];
 
     const wardIds: Id<"wards">[] = [];
@@ -139,9 +139,9 @@ export const masterInit = mutation({
 
     // 5. Seed demo users
     const demoUsers = [
-      { email: "admin@hospital.local", role: "admin" as const, name: "Administrateur Système" },
-      { email: "doctoretat@test.com", role: "medecin_etat" as const, name: "Dr. Amara Boudiaf", speciality: "Médecine Interne" },
-      { email: "privatedoc@test.com", role: "private_doctor" as const, name: "Dr. Leïla Hamdi", speciality: "Cardiologie" },
+      { email: "admin@hospital.local", role: "admin" as const, name: "Administrateur Syst??me" },
+      { email: "doctoretat@test.com", role: "medecin_etat" as const, name: "Dr. Amara Boudiaf", speciality: "M??decine Interne" },
+      { email: "privatedoc@test.com", role: "private_doctor" as const, name: "Dr. Le??la Hamdi", speciality: "Cardiologie" },
       { email: "staff@hospital.local", role: "medical_staff" as const, name: "Infirmier Sofiane Meziane" },
       { email: "pharmacy@hospital.local", role: "pharmacy" as const, name: "Pharmacien Nassima Khelifi" },
       { email: "lab@hospital.local", role: "laboratory" as const, name: "Technicien Labo Karim Benali" },
@@ -236,8 +236,8 @@ export const masterInit = mutation({
         dob: "1960-03-15",
         blood_type: "AB+",
         phone: "0555333444",
-        wilaya: "Sétif",
-        commune: "Sétif Ville",
+        wilaya: "S??tif",
+        commune: "S??tif Ville",
         allergies: ["Iodine", "Sulfa"],
         assigned_doctor_email: "privatedoc@test.com",
         admission_ward: null,
