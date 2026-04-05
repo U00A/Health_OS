@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, Suspense } from "react";
-import { authClient } from "@/lib/auth-client";
 import { LogOut, Menu, X, Activity, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { MobileBottomNavigation } from "@/components/navigation";
@@ -25,7 +24,7 @@ export function DashboardShell({
   const finalColor = roleColor || autoColor;
 
   const handleSignOut = useCallback(async () => {
-    await authClient.signOut();
+    await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   }, []);
 
