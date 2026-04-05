@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
 
 const LandingPage = dynamic(
   () => import("@/components/landing/LandingPage"),
@@ -13,19 +17,27 @@ const LandingPage = dynamic(
 );
 
 export default function Home() {
-  const { data: session, isPending } = authClient.useSession();
-  const betterAuthId = session?.user?.id;
-  const user = useQuery(
-    api.users.current,
-    betterAuthId ? { betterAuthId } : "skip"
-  );
+  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (session?.user && user === null) {
-      // User authenticated but not found in Convex — possible stale session
-      void authClient.signOut();
-    } else if (session?.user && user) {
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth/session");
+        const data = await res.json();
+        setUser(data.user);
+      } catch {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
       switch (user.role) {
         case "admin": router.replace("/admin"); break;
         case "medecin_etat": router.replace("/doctor"); break;
@@ -37,9 +49,9 @@ export default function Home() {
         default: router.replace("/patient-portal"); break;
       }
     }
-  }, [session, user, router]);
+  }, [user, router]);
 
-  if (isPending || (session?.user && user === undefined)) {
+  if (isLoading || user === undefined) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
@@ -52,7 +64,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between">
-      {!session?.user && <LandingPage />}
+      {!user && <LandingPage />}
     </main>
   );
 }
