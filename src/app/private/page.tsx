@@ -507,7 +507,7 @@ export default function PrivatePage() {
                   <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
                     <TestTube size={14} className="text-violet-600" /> Lab Results
                   </h3>
-                  {labResults && labResults.length > 0 ? labResults.map((lr) => (
+                  {labResults && labResults.length > 0 ? labResults.filter((lr): lr is NonNullable<typeof lr> => lr !== null).map((lr) => (
                     <div key={lr._id} className="p-3 bg-white border border-slate-200 rounded-lg mb-2">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-slate-900">{(lr as Record<string, unknown>).analysis_type as string || "Lab Test"}</span>
