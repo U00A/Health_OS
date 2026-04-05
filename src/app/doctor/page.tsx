@@ -90,7 +90,6 @@ export default function DoctorPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [timelineFilter, setTimelineFilter] = useState<"all" | "cr" | "lab" | "rx" | "vitals">("all");
-  const [showSecondaryActions, setShowSecondaryActions] = useState(false);
 
   // Referral state
   const [referralType, setReferralType] = useState<"internal" | "external" | "urgent" | "">("");
@@ -251,40 +250,27 @@ export default function DoctorPage() {
           </div>
         )}
 
-        {/* Secondary Actions Toggle */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSecondaryActions(!showSecondaryActions)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
-          >
-            {showSecondaryActions ? <EyeOff size={14} /> : <EyeIcon size={14} />}
-            {showSecondaryActions ? "Hide" : "Show"} More Tools
-          </button>
+        {/* Secondary Actions - Always visible */}
+        <div className="flex flex-wrap gap-2">
+          {secondaryActions.map((action) => {
+            const Icon = action.icon;
+            const isActive = activeView === action.key;
+            return (
+              <button
+                key={action.key}
+                onClick={() => setActiveView(isActive ? "list" : action.key as ActiveView)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isActive
+                    ? "bg-slate-900 text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <Icon size={14} />
+                {action.label}
+              </button>
+            );
+          })}
         </div>
-
-        {/* Secondary Actions */}
-        {showSecondaryActions && !selectedPatient && (
-          <div className="flex flex-wrap gap-2">
-            {secondaryActions.map((action) => {
-              const Icon = action.icon;
-              const isActive = activeView === action.key;
-              return (
-                <button
-                  key={action.key}
-                  onClick={() => setActiveView(isActive ? "list" : action.key as ActiveView)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-slate-900 text-white"
-                      : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  <Icon size={14} />
-                  {action.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Patient Header Bar */}
