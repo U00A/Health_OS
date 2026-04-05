@@ -24,6 +24,7 @@ import type * as imagingFiles from "../imagingFiles.js";
 import type * as init from "../init.js";
 import type * as labOrders from "../labOrders.js";
 import type * as labResults from "../labResults.js";
+import type * as mockData from "../mockData.js";
 import type * as notifications from "../notifications.js";
 import type * as patientDocuments from "../patientDocuments.js";
 import type * as patients from "../patients.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   init: typeof init;
   labOrders: typeof labOrders;
   labResults: typeof labResults;
+  mockData: typeof mockData;
   notifications: typeof notifications;
   patientDocuments: typeof patientDocuments;
   patients: typeof patients;
