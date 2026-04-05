@@ -20,7 +20,7 @@ export default function middleware(request: NextRequest) {
   // Check for our session cookie
   const sessionCookie = request.cookies.get(COOKIE_NAME)?.value;
 
-  const isSignInPage = pathname === "/login";
+  const isSignInPage = signInPages.includes(pathname);
   const isProtected = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Redirect unauthenticated users away from protected routes
