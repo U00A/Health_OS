@@ -1,7 +1,8 @@
-// v1.0.2 - Inline masking to avoid dynamic module import issues
+// v1.0.3 - Fully inlined masking to avoid dynamic module import issues
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, getUser, maskDocumentDoctor } from "./security";
+import { requireRole, getUser } from "./security";
+import { Doc, Id } from "./_generated/dataModel";
 
 // Immutable insert (no update or delete)
 export const create = mutation({
@@ -62,9 +63,54 @@ export const listByPatient = query({
 
     const enriched = [];
     for (const doc of results) {
-      const masked = await maskDocumentDoctor(ctx, args.betterAuthId || null, doc);
+      const masked = await maskDocumentDoctorInline(ctx, args.betterAuthId || null, doc);
       enriched.push(masked);
     }
+
     return enriched;
-    },
-    });
+  },
+});
+
+// Inlined masking function to avoid dynamic module import issues
+async function maskDocumentDoctorInline<T extends { doctor_id?: Id<"users"> }>(
+  ctx: QueryCtx,
+  callerBetterAuthId: string | null,
+  doc: T
+): Promise<T & { doctorName?: string; doctorClinic?: string; doctorContact?: string }> {
+  if (!doc.doctor_id) return { ...doc } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+
+  const caller = callerBetterAuthId ? await getUser(ctx, callerBetterAuthId) : null;
+  const callerRole = caller?.role || "patient";
+
+  // State doctors see full identity
+  if (callerRole === "medecin_etat") {
+    const doctor = await ctx.db.get(doc.doctor_id);
+    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+  }
+
+  // Patients see full identity
+  if (callerRole === "patient") {
+    const doctor = await ctx.db.get(doc.doctor_id);
+    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+  }
+
+  // Private doctors viewing another private doctor's work -> MASKED
+  if (callerRole === "private_doctor") {
+    const targetDoctor = await ctx.db.get(doc.doctor_id);
+    if (!targetDoctor) return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+
+    // If it's the same doctor, show full identity
+    if (caller && targetDoctor._id === caller._id) {
+      return { ...doc, doctorName: targetDoctor.name || "Unknown Doctor", doctorClinic: targetDoctor.clinic_name, doctorContact: targetDoctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    }
+    // Different private doctor -> MASK
+    return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+  }
+
+  // Default: masked
+  return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+}
+
+type QueryCtx = Parameters<typeof getUser>[0];
