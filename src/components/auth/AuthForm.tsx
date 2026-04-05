@@ -83,7 +83,7 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
       
       if (isSignUpMode && role === "patient" && onSignupSuccess) {
         window.dispatchEvent(new CustomEvent("auth-success", { 
-          detail: { betterAuthId: data.user.id, email } 
+          detail: { betterAuthId: data.user.betterAuthId, email } 
         }));
         onSignupSuccess();
         return;
