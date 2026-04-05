@@ -37,14 +37,46 @@ export const create = mutation({
 });
 
 export const listByPatient = query({
-  args: { patient_id: v.id("patients") },
+  args: { 
+    patient_id: v.id("patients"),
+    betterAuthId: v.optional(v.string()),
+    sessionToken: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    // Anyone authorized can view this patient's CRs
-    // (Assuming middleware and top-level guard block unauthorized users)
-    return await ctx.db
+    const user = args.betterAuthId ? await ctx.db
+      .query("users")
+      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId!))
+      .first() : null;
+    
+    let baseQuery = ctx.db
       .query("compte_rendus")
-      .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id))
-      .order("desc")
-      .collect();
+      .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id));
+
+    // If it's a private doctor, apply restrictions
+    if (user && user.role === "private_doctor") {
+      const isPresent = args.sessionToken 
+        ? (await ctx.db
+            .query("biometric_sessions")
+            .withIndex("by_token", (q) => q.eq("session_token", args.sessionToken!))
+            .first())?.is_valid 
+        : false;
+      
+      if (!isPresent) {
+        // Patient-Absent Mode: Only own records
+        baseQuery = baseQuery.filter((q) => q.eq(q.field("doctor_id"), user._id));
+      }
+    }
+
+    const results = await baseQuery.order("desc").collect();
+
+    // Apply masking helper from security.ts
+    // Import from security.ts at top level would be better, but we need to ensure it's available
+    const { maskDocumentDoctor } = await import("./security");
+    
+    return await Promise.all(
+      results.map(async (doc) => {
+        return await maskDocumentDoctor(ctx, args.betterAuthId || null, doc);
+      })
+    );
   },
 });

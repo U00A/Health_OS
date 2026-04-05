@@ -108,7 +108,7 @@ export function PatientSidebar({ patientId, activeSection, onSectionChange }: Pa
     { id: "comptes-rendus", label: "Comptes Rendus", icon: <FileText size={16} />, badge: compteRendus?.length },
     { id: "timeline", label: "Health Timeline", icon: <Clock size={16} /> },
     { id: "appointments", label: "Upcoming Appointments", icon: <Calendar size={16} /> },
-    { id: "medications", label: "Medication Schedule", icon: <Pill size={16} />, badge: prescriptions?.filter((p) => p.status === "active").length },
+    { id: "medications", label: "Medication Schedule", icon: <Pill size={16} />, badge: prescriptions?.filter((p) => p?.status === "active").length },
     { id: "doctors", label: "Assigned Doctors", icon: <Users size={16} /> },
     { id: "messages", label: "Messages", icon: <MessageSquare size={16} /> },
     { id: "notifications", label: "Notifications", icon: <Bell size={16} /> },

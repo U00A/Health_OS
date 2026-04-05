@@ -1,0 +1,728 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { padding: 1.5rem 0 3rem; font-size: 13px; }
+
+.role-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+.rnav { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); background: transparent; transition: all .15s; }
+.rnav.active { color: var(--color-text-primary); background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+
+.panel { display: none; }
+.panel.on { display: block; }
+
+.role-intro { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.role-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.role-name { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+.role-sub { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; }
+
+.layout-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-tertiary); font-weight: 500; margin-bottom: 10px; }
+
+.screen { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 20px; }
+.screen-title { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 8px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px; }
+.screen-body { display: flex; min-height: 160px; }
+
+.zone { padding: 12px 14px; font-size: 12px; color: var(--color-text-secondary); line-height: 1.65; }
+.zone-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+.zone-items { list-style: none; }
+.zone-items li { padding: 3px 0; display: flex; gap: 6px; }
+.zone-items li::before { content: '–'; color: var(--color-text-tertiary); flex-shrink: 0; }
+
+.z-header { width: 100%; border-bottom: 0.5px solid var(--color-border-tertiary); padding: 10px 14px; background: var(--color-background-primary); }
+.z-header .zone-label { margin-bottom: 6px; }
+.z-body { display: flex; flex: 1; }
+.z-sidebar { border-right: 0.5px solid var(--color-border-tertiary); min-width: 170px; max-width: 170px; }
+.z-main { flex: 1; }
+.z-full { flex: 1; }
+
+.badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 500; margin-left: 6px; vertical-align: middle; }
+.b-new { background: #E1F5EE; color: #0F6E56; }
+.b-live { background: #E6F1FB; color: #185FA5; }
+.b-warn { background: #FAEEDA; color: #854F0B; }
+.b-gate { background: #EEEDFE; color: #534AB7; }
+@media (prefers-color-scheme: dark) {
+  .b-new { background: #04342C; color: #5DCAA5; }
+  .b-live { background: #042C53; color: #85B7EB; }
+  .b-warn { background: #412402; color: #EF9F27; }
+  .b-gate { background: #26215C; color: #AFA9EC; }
+}
+
+.divider { height: 0.5px; background: var(--color-border-tertiary); margin: 18px 0; }
+.section-note { font-size: 12px; color: var(--color-text-secondary); background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 14px; margin-bottom: 16px; line-height: 1.6; border-left: 2px solid var(--color-border-secondary); border-radius: 0; }
+</style>
+
+<div class="wrap">
+
+<div class="role-nav">
+  <button class="rnav active" onclick="show('etat')">Médecin d'État</button>
+  <button class="rnav" onclick="show('priv')">Private Doctor</button>
+  <button class="rnav" onclick="show('staff')">Medical Staff</button>
+  <button class="rnav" onclick="show('admin')">Administration</button>
+  <button class="rnav" onclick="show('pharmacy')">Pharmacy</button>
+  <button class="rnav" onclick="show('lab')">Laboratory</button>
+  <button class="rnav" onclick="show('patient')">Patient Hub</button>
+</div>
+
+<div id="p-etat" class="panel on">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#1A2B4A;"></div>
+    <div>
+      <div class="role-name">Médecin d'État — طبيب الدولة</div>
+      <div class="role-sub">Z-layout shell. Full clinical access for assigned patients. Sees private doctor names unmasked. 4 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Main clinical dashboard (default view)</div>
+  <div class="screen">
+    <div class="screen-title">
+      <div style="width:8px;height:8px;border-radius:50%;background:#1A2B4A;"></div>
+      Main clinical dashboard
+    </div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <div class="zone-label" style="color:#1A2B4A;">Persistent patient header bar — always visible when a patient is selected</div>
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Full name + national ID</li>
+          <li>Date of birth + age</li>
+          <li>Blood type</li>
+          <li>Allergy flags (red if critical)</li>
+          <li>Wilaya + commune</li>
+          <li>Phone number</li>
+          <li>Shift handover note (if exists)</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Left sidebar</div>
+          <ul class="zone-items">
+            <li>Speciality list (collapsible)</li>
+            <li>→ Doctors per speciality</li>
+            <li>→ → Patients per doctor</li>
+            <li style="margin-top:8px;">─────</li>
+            <li>Compte Rendu section</li>
+            <li>Radios / Imaging</li>
+            <li>Lab Results</li>
+            <li>Prescriptions</li>
+            <li>Patient Timeline</li>
+            <li style="margin-top:8px;">─────</li>
+            <li>Shift log</li>
+            <li>Ward roster</li>
+            <li>Referrals</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Center content — changes based on sidebar selection</div>
+          <ul class="zone-items">
+            <li>Default: live vitals dashboard (weight trend, BP chart, HR chart, glucose chart) <span class="badge b-live">Live</span></li>
+            <li>Cross-patient vitals comparison grid (all assigned patients)</li>
+            <li>Quick in-consultation scratchpad (private note, auto-clears after CR)</li>
+            <li>Allergy conflict banner (persistent, cannot be hidden)</li>
+            <li>Escalation notification banner from nursing (undismissable until acknowledged)</li>
+            <li>Bell notification feed (ordered results, new escalations)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Patient clinical record (sidebar item selected)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#1A2B4A;"></div>Patient clinical record</div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Patient header (same persistent bar)</li>
+          <li>Active section tab (CR / Radios / Labs / Rx / Timeline)</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Sidebar (same)</div>
+          <ul class="zone-items">
+            <li>Patient stays selected</li>
+            <li>Section tabs highlighted</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Compte Rendu view</div>
+          <ul class="zone-items">
+            <li>List of past CRs (date, diagnosis code, author)</li>
+            <li>Rich text editor for new CR</li>
+            <li>ICD-10 diagnosis search field</li>
+            <li>Treatment plan + follow-up date fields</li>
+            <li>Template selector (personal saved templates)</li>
+            <li>Save → immutable / Print as PDF</li>
+            <li style="margin-top:6px;">────</li>
+            <li><em>Radios view:</em> DICOM viewer (Cornerstone.js), upload slot, metadata (modality, body part, date)</li>
+            <li><em>Labs view:</em> result cards per panel, trend chart per recurring value, reference bands</li>
+            <li><em>Prescriptions view:</em> active + history, write new Rx, allergy cross-check on save</li>
+            <li><em>Timeline view:</em> chronological event feed, filter by type + date range</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 3 — Lab order dispatch</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#1A2B4A;"></div>Lab order dispatch</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Patient header (persistent)</li>
+          <li>Select lab from connected labs list</li>
+          <li>Select analysis type (CBC, BMP, LFT, lipids, HbA1c, custom)</li>
+          <li>Urgency flag (routine / urgent / critical)</li>
+          <li>Optional clinical note to lab</li>
+          <li>Submit → appears in lab queue immediately</li>
+          <li>Past orders list for this patient (status: pending / result received)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 4 — Referral + shift handover</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#1A2B4A;"></div>Referral + shift handover</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li><em>Referral form:</em> target speciality / external clinic, diagnosis pre-filled, reason free text, printable letter generated</li>
+          <li><em>Shift handover:</em> triggered at session end, one note field per active patient, incoming doctor sees it pinned</li>
+          <li><em>Shift log view:</em> full append-only ward event feed, filterable by date and type</li>
+          <li><em>Ward roster:</em> which doctors are on duty, their assigned patients, current location</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-priv" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#534AB7;"></div>
+    <div>
+      <div class="role-name">Private Doctor — الطبيب الخاص</div>
+      <div class="role-sub">Same Z-layout shell. Two permission modes — patient-present (biometric gated) and patient-absent. Doctor identities masked from each other. 3 main screens.</div>
+    </div>
+  </div>
+
+  <div class="section-note">
+    The two modes share the same layout shell but render different data. The biometric gate screen appears before patient-present mode activates.
+  </div>
+
+  <div class="layout-label">Screen 1 — Biometric gate (before patient-present activates)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#534AB7;"></div>Identity gate <span class="badge b-gate">Security</span></div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Patient name + ID displayed (doctor selected patient from their list)</li>
+          <li>Instruction: "Ask patient to confirm fingerprint"</li>
+          <li>Biometric confirmation widget (fingerprint reader integration point)</li>
+          <li>Doctor professional ID re-confirmation field</li>
+          <li>Both confirmed → patient-present mode unlocks</li>
+          <li>Either fails → falls back to patient-absent mode, gate event logged</li>
+          <li>Gate event written to case_entries (immutable) with timestamp</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Patient-present mode (after biometric gate)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#534AB7;"></div>Patient-present clinical view <span class="badge b-gate">Biometric active</span></div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Full patient header (name, blood type, allergies, DOB, phone)</li>
+          <li>Mode indicator: "Patient present — session active"</li>
+          <li>Signal / notification button <span class="badge b-new">New</span></li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Left sidebar</div>
+          <ul class="zone-items">
+            <li>Own patient list</li>
+            <li>─────</li>
+            <li>Compte Rendu</li>
+            <li>Radios / Imaging</li>
+            <li>Lab Results</li>
+            <li>Prescriptions</li>
+            <li>Dispatch lab order</li>
+            <li>Appointment calendar</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Center panel</div>
+          <ul class="zone-items">
+            <li>Live vitals dashboard (all sources, read-only aggregate) <span class="badge b-live">Live</span></li>
+            <li>All documents visible: CRs, labs, radios from ALL doctors — but other doctor names shown as "Treating Physician" <span class="badge b-gate">Masked</span></li>
+            <li>Write new CR (rich editor, ICD-10, templates)</li>
+            <li>Write prescription (allergy cross-check)</li>
+            <li>Dispatch lab order</li>
+            <li>Signal/notification button → structured flag written to patient record + notification to patient</li>
+            <li>Quick scratchpad (private, auto-clears after CR)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 3 — Patient-absent mode (default / no live consultation)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#534AB7;"></div>Patient-absent view (restricted)</div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Left sidebar</div>
+          <ul class="zone-items">
+            <li>Own enrolled patients</li>
+            <li>Archived patients</li>
+            <li>─────</li>
+            <li>Appointment calendar</li>
+            <li>Enrollment requests</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Center — restricted scope</div>
+          <ul class="zone-items">
+            <li>Own CRs only (authored by this doctor)</li>
+            <li>Own-ordered results only (labs + imaging this doctor requested)</li>
+            <li>Appointment calendar (read + write)</li>
+            <li>Draft prescriptions (cannot submit until patient-present session opens)</li>
+            <li>Patient summary printout generator</li>
+            <li>Structured message inbox (patient symptom reports)</li>
+            <li>Enrollment request management (send, accept, expire)</li>
+            <li>Inactive patient archive</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-staff" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#854F0B;"></div>
+    <div>
+      <div class="role-name">Medical Staff — الفريق الطبي / التمريض</div>
+      <div class="role-sub">Ward operations only. No clinical write access. Per-bed view with live vitals, scheduled meds, and admission data. 3 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Ward bed grid (default view)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#854F0B;"></div>Ward bed grid <span class="badge b-live">Live</span></div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Ward name + current occupancy count</li>
+          <li>On-duty doctors list (who is signed in, which ward)</li>
+          <li>Shift handover summary card (from outgoing shift)</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-full zone">
+          <div class="zone-label">Bed card grid — each bed card contains</div>
+          <ul class="zone-items">
+            <li>Patient name + national ID</li>
+            <li>Admission date + elapsed stay duration</li>
+            <li>Scheduled medications for current shift (derived from active prescriptions — name, dose, time)</li>
+            <li>Live vitals: BP, heart rate, temperature, SpO2 (most recent reading) <span class="badge b-live">Live</span></li>
+            <li>Bed status: occupied / vacant / pending discharge</li>
+            <li>Escalation flag button (one-tap → fires undismissable banner to assigned doctor)</li>
+            <li>─── If vacant: quick-admit button</li>
+            <li>─── If pending discharge: discharge checklist progress indicator</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Case entry log + vitals entry</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#854F0B;"></div>Case log + vitals entry</div>
+    <div class="screen-body">
+      <div class="z-sidebar zone">
+        <div class="zone-label">Left — log feed</div>
+        <ul class="zone-items">
+          <li>Append-only event feed</li>
+          <li>Server timestamps</li>
+          <li>Filter by type / date</li>
+          <li>Types: observation, note, escalation, procedure, event</li>
+        </ul>
+      </div>
+      <div class="z-main zone">
+        <div class="zone-label">Right — entry forms</div>
+        <ul class="zone-items">
+          <li>New case entry form (select type, free text, auto-timestamps)</li>
+          <li>─────</li>
+          <li>Vitals entry per patient: BP, HR, temp, SpO2, RR, weight</li>
+          <li>Select patient from ward list</li>
+          <li>Submit → writes to patient vitals + updates bed card live</li>
+          <li>─────</li>
+          <li>Supply request form (item, quantity, urgency, ward)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 3 — Admission + discharge flow</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#854F0B;"></div>Admission + discharge</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li><em>Admission form:</em> search patient by national ID, select bed, set type (emergency / scheduled / transfer), assign primary doctor from on-duty list → submit writes case_entry + updates bed grid</li>
+          <li><em>Discharge checklist:</em> medication given, patient briefed, discharge summary printed, bed cleared — all items must be ticked before bed resets to vacant</li>
+          <li><em>Read-only access:</em> active prescriptions (to administer meds), CRs (for clinical context — cannot write)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-admin" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#993C1D;"></div>
+    <div>
+      <div class="role-name">Administration — الإدارة</div>
+      <div class="role-sub">Civil and billing data only. Zero clinical access. No path from this interface to any medical record. 3 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Patient civil registry</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#993C1D;"></div>Civil patient registry</div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Search by name / national ID / admission date range</li>
+          <li>Total admissions counter (today / this month)</li>
+          <li>Current ward occupancy rates</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-full zone">
+          <div class="zone-label">Patient civil record (clicking a search result opens this — no clinical fields present)</div>
+          <ul class="zone-items">
+            <li>First name, last name, national ID, date of birth, gender</li>
+            <li>Address: wilaya + commune + phone + emergency contact</li>
+            <li>Admission history: date in, date out, ward, admission type — NO diagnosis, NO reason</li>
+            <li>Billing records linked to each admission</li>
+            <li>Document generation: admission certificate, discharge cover sheet (civil header only), billing statement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Billing management</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#993C1D;"></div>Billing management</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Billing entry list: patient name, admission ref, date, service category (consultation / lab / imaging / bed day / pharmacy — category only, no drug names), amount, status</li>
+          <li>Create new billing entry (linked to admission)</li>
+          <li>Mark as paid / pending / waived</li>
+          <li>Export billing statement PDF per patient</li>
+          <li>Monthly revenue summary (totals by category)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 3 — Operational statistics</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#993C1D;"></div>Operational stats</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Total admissions this month per ward</li>
+          <li>Average length of stay per ward</li>
+          <li>Current occupancy rate per ward (live) <span class="badge b-live">Live</span></li>
+          <li>Discharge rate this month</li>
+          <li>Supply requests pending vs fulfilled</li>
+          <li>No clinical metrics — no diagnoses, outcomes, or mortality data shown</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-pharmacy" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#185FA5;"></div>
+    <div>
+      <div class="role-name">Pharmacy — الصيدلية</div>
+      <div class="role-sub">Single-purpose dispensing interface. No diagnoses, no CRs, no imaging — ever. 2 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Prescriptions queue (default view)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#185FA5;"></div>Prescriptions queue <span class="badge b-live">Live</span></div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Pending prescriptions count (live)</li>
+          <li>Average dispense time today</li>
+          <li>Interactions flagged today</li>
+          <li>Backlog counter</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Queue list</div>
+          <ul class="zone-items">
+            <li>New prescriptions appear in real time</li>
+            <li>Sorted: urgency first, then time</li>
+            <li>Expiry warning flag on aged prescriptions</li>
+            <li>Controlled substance tag</li>
+            <li>Search patient by name / national ID</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Selected prescription detail</div>
+          <ul class="zone-items">
+            <li>Patient name + ID (no clinical data)</li>
+            <li>Prescribing doctor name + date</li>
+            <li>Line items: drug name, dose, frequency, duration, route</li>
+            <li>Drug interaction checker result per line <span class="badge b-warn">Severity flagged</span></li>
+            <li>Expiry date check (blocks dispense if expired)</li>
+            <li>Controlled substance extra confirmation (if applicable)</li>
+            <li>Verify each line → tick checkboxes</li>
+            <li>Partial dispense: mark out-of-stock lines + expected restock date</li>
+            <li>Submit dispense → immutable, status updates live to doctor + patient</li>
+            <li>Past dispense history for this patient (read-only)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Dispensing stats</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#185FA5;"></div>Shift stats panel</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Prescriptions processed this shift</li>
+          <li>Average time from prescription creation to dispense</li>
+          <li>Most dispensed drug classes today</li>
+          <li>Partial dispense log (what's pending restock)</li>
+          <li>Controlled substance dispense log (for audit)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-lab" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#3B6D11;"></div>
+    <div>
+      <div class="role-name">Laboratory — مخبر التحاليل</div>
+      <div class="role-sub">Orders queue + result upload. Triple-write on every submission. No clinical access beyond the order. 2 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Orders queue + result entry (main view)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#3B6D11;"></div>Orders queue + result entry <span class="badge b-live">Live</span></div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Orders pending count</li>
+          <li>Orders completed today</li>
+          <li>Critical escalations issued today</li>
+          <li>Average turnaround time</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Order queue</div>
+          <ul class="zone-items">
+            <li>New orders appear in real time</li>
+            <li>Sorted: critical → urgent → routine</li>
+            <li>Turnaround timer per order (live elapsed time)</li>
+            <li>Overdue orders highlight amber → red</li>
+            <li>Batch entry mode toggle (for same panel, multiple patients)</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Result entry panel (selected order)</div>
+          <ul class="zone-items">
+            <li>Patient name + ID, ordering doctor, analysis type, urgency, order time</li>
+            <li>Clinical note from doctor (if included)</li>
+            <li>─────</li>
+            <li>Structured result fields per panel component</li>
+            <li>Demographic-adjusted reference ranges shown per field (age + sex)</li>
+            <li>Critical threshold check: if value outside critical range → real-time alert fires to doctor before submit <span class="badge b-warn">Critical alert</span></li>
+            <li>PDF attachment upload slot (for complex panels)</li>
+            <li>─────</li>
+            <li>Submit → triple-write: patient record + ordering doctor scope + lab archive simultaneously</li>
+            <li>Patient + doctor receive bell notification instantly</li>
+            <li>Amendment workflow: link correction to original (original preserved)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Workload summary + result archive</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#3B6D11;"></div>Workload + archive</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li>Daily workload chart: orders received vs results submitted vs pending</li>
+          <li>Critical values log (all escalations issued, acknowledgement status)</li>
+          <li>Lab result archive (own submissions, searchable by patient or date)</li>
+          <li>Amendments log (corrections linked to originals)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="p-patient" class="panel">
+  <div class="role-intro">
+    <div class="role-dot" style="background:#0F6E56;"></div>
+    <div>
+      <div class="role-name">Patient Hub — بوابة المريض</div>
+      <div class="role-sub">Full Z-layout redesign. Sidebar with speciality archive, document archive, and timeline. Central live vitals dashboard. Own data only. 4 main screens.</div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 1 — Home / live vitals dashboard (default view)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#0F6E56;"></div>Patient home — live vitals dashboard <span class="badge b-live">Live</span></div>
+    <div class="screen-body" style="flex-direction:column;">
+      <div class="z-header">
+        <ul class="zone-items" style="display:flex;flex-wrap:wrap;gap:0 24px;">
+          <li>Patient name + blood type (read-only)</li>
+          <li>Allergy flags (read-only)</li>
+          <li>Bell notification icon (new result / new prescription)</li>
+          <li>Edit phone + address button</li>
+        </ul>
+      </div>
+      <div class="z-body">
+        <div class="z-sidebar zone">
+          <div class="zone-label">Left sidebar — 3 sections</div>
+          <ul class="zone-items">
+            <li><strong style="color:var(--color-text-primary)">Speciality archive</strong></li>
+            <li>→ Cardiology (Dr. Masoud…)</li>
+            <li>→ Ophthalmology (Dr. …)</li>
+            <li>→ [each speciality seen]</li>
+            <li style="margin-top:6px;"><strong style="color:var(--color-text-primary)">Document archive</strong></li>
+            <li>→ Lab results</li>
+            <li>→ Imaging / Radio</li>
+            <li>→ Comptes Rendus</li>
+            <li style="margin-top:6px;"><strong style="color:var(--color-text-primary)">Health timeline</strong></li>
+            <li>→ All events chronological</li>
+          </ul>
+        </div>
+        <div class="z-main zone">
+          <div class="zone-label">Central dashboard (default)</div>
+          <ul class="zone-items">
+            <li>Upcoming appointment card (if exists) — pinned at top</li>
+            <li>Medication daily schedule card (active prescriptions → human-readable dosing)</li>
+            <li>─────</li>
+            <li>Weight trend chart — line chart over time, normal band overlay</li>
+            <li>Blood pressure chart — systolic + diastolic dual lines over time</li>
+            <li>Heart rate chart — line chart over time</li>
+            <li>Blood glucose chart — line chart (for diabetic patients)</li>
+            <li>─── All charts: reference band shaded, out-of-range points highlighted</li>
+            <li>─────</li>
+            <li>Assigned doctors list (name, speciality, hospital/clinic, role type)</li>
+            <li>Signal flags from doctors (content visible, doctor identity as "Treating Physician") <span class="badge b-new">New</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 2 — Speciality archive (sidebar: speciality selected)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#0F6E56;"></div>Speciality → doctor → consultation history</div>
+    <div class="screen-body">
+      <div class="z-sidebar zone">
+        <div class="zone-label">Sidebar — same</div>
+        <ul class="zone-items">
+          <li>Speciality expanded</li>
+          <li>Doctor name shown</li>
+          <li>(full name — patients see doctor identity)</li>
+        </ul>
+      </div>
+      <div class="z-main zone">
+        <div class="zone-label">Center — consultation history with that doctor</div>
+        <ul class="zone-items">
+          <li>List of CRs authored by that doctor for this patient (date, diagnosis label)</li>
+          <li>Prescriptions written by that doctor</li>
+          <li>Lab orders requested by that doctor</li>
+          <li>All read-only — no edit, no delete</li>
+          <li>Download any CR as PDF</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 3 — Document archive (sidebar: lab results / imaging / CRs)</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#0F6E56;"></div>Document archive — by type</div>
+    <div class="screen-body">
+      <div class="z-full zone">
+        <ul class="zone-items">
+          <li><em>Lab results tab:</em> all results across all doctors — dated list, structured values per panel, reference range column, trend chart for recurring panels, PDF download</li>
+          <li><em>Imaging / Radio tab:</em> all imaging files — date, modality (X-ray / MRI / CT), ordering doctor, DICOM viewer or image viewer, PDF radiology report if attached</li>
+          <li><em>Comptes Rendus tab:</em> all CRs across all treating doctors — date, speciality, diagnosis label, full CR content (read-only), PDF download</li>
+          <li>─── Within each document: authoring doctor identity visible to patient (patients have the right to know)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-label">Screen 4 — Health timeline + notification feed</div>
+  <div class="screen">
+    <div class="screen-title"><div style="width:8px;height:8px;border-radius:50%;background:#0F6E56;"></div>Health timeline + notifications</div>
+    <div class="screen-body">
+      <div class="z-sidebar zone">
+        <div class="zone-label">Notification feed</div>
+        <ul class="zone-items">
+          <li>New prescription written → doctor name + med count</li>
+          <li>Lab result uploaded → analysis type + doctor</li>
+          <li>Doctor signal flag received → "Treating Physician left a note"</li>
+          <li>Appointment scheduled → date + doctor</li>
+        </ul>
+      </div>
+      <div class="z-main zone">
+        <div class="zone-label">Health timeline (full chronological history)</div>
+        <ul class="zone-items">
+          <li>Hospital admissions + discharges (date, ward, type)</li>
+          <li>Consultations + CRs (date, speciality, diagnosis)</li>
+          <li>Lab results uploaded (date, panel type)</li>
+          <li>Prescriptions written + dispensed (dates, status)</li>
+          <li>Imaging uploaded (date, modality)</li>
+          <li>Vitals readings (date, values)</li>
+          <li>Doctor signal flags</li>
+          <li>─────</li>
+          <li>Filter by event type + date range</li>
+          <li>Structured message composer to private doctor (symptom type, severity 1–5, duration, note)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.rnav').forEach(b => b.classList.remove('active'));
+  document.getElementById('p-' + id).classList.add('on');
+  event.target.classList.add('active');
+}
+</script>

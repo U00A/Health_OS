@@ -8,7 +8,7 @@ import { Spinner } from "@heroui/react";
 
 interface VitalsTrendChartProps {
   patientId: Id<"patients">;
-  metric: "systolic_bp" | "diastolic_bp" | "heart_rate" | "temperature" | "spo2" | "respiratory_rate";
+  metric: "systolic_bp" | "diastolic_bp" | "heart_rate" | "temperature" | "spo2" | "respiratory_rate" | "weight";
   unit: string;
   label: string;
   normalRange: [number, number];

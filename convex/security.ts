@@ -263,15 +263,15 @@ export async function maskDoctorIdentity(
 /**
  * Helper to apply masking to a document with a doctor_id field
  */
-export async function maskDocumentDoctor(
+export async function maskDocumentDoctor<T extends { doctor_id?: Id<"users"> }>(
   ctx: QueryCtx,
   callerBetterAuthId: string | null,
-  doc: { doctor_id?: Id<"users"> } & Record<string, unknown>
-): Promise<Record<string, unknown>> {
-  if (!doc.doctor_id) return { ...doc } as Record<string, unknown>;
+  doc: T
+): Promise<T & { doctorName?: string; doctorClinic?: string; doctorContact?: string }> {
+  if (!doc.doctor_id) return { ...doc } as any;
 
   const masked = await maskDoctorIdentity(ctx, callerBetterAuthId, doc.doctor_id);
-  const result = { ...doc } as Record<string, unknown>;
+  const result = { ...doc } as any;
 
   if (masked.doctorName === "Treating Physician") {
     result.doctorName = "Treating Physician";

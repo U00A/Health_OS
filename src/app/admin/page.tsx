@@ -2,15 +2,19 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Card, Button, Chip, Spinner } from "@heroui/react";
+import { Id } from "../../../convex/_generated/dataModel";
+import { Card, Button, Chip, Spinner, Skeleton } from "@heroui/react";
 import { Users, Server, ShieldAlert, Activity, UserPlus, HardDrive, RefreshCw, Hospital, BedDouble, Stethoscope, UserCheck, Pill, Beaker, FileText, Search, CalendarDays, DollarSign } from "lucide-react";
+import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { useState } from "react";
 
 type AdminTab = "console" | "patients" | "admissions" | "billing";
 
 export default function AdminPage() {
+  const betterAuthId = useBetterAuthId();
   const initStatus = useQuery(api.init.checkInit);
   const users = useQuery(api.adminUsers.listAllUsers);
+  const patients = useQuery(api.patients.listAll, betterAuthId ? { betterAuthId } : "skip");
   const wards = useQuery(api.wards.listAll);
   const beds = useQuery(api.beds.listAll);
   const admissions = useQuery(api.admissions.listAllActive);
@@ -18,6 +22,21 @@ export default function AdminPage() {
   const labOrders = useQuery(api.labOrders.listAllPending);
   const [activeTab, setActiveTab] = useState<AdminTab>("console");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+
+  // Fetch data for selected patient history
+  const selectedPatientCivil = useQuery(
+    api.billing.getPatientCivilData,
+    selectedPatientId && betterAuthId ? { patient_id: selectedPatientId as Id<"patients">, betterAuthId } : "skip"
+  );
+  const selectedPatientAdmissions = useQuery(
+    api.admissions.listByPatient,
+    selectedPatientId ? { patient_id: selectedPatientId as Id<"patients"> } : "skip"
+  );
+  const selectedPatientBilling = useQuery(
+    api.billing.getPatientBilling,
+    selectedPatientId && betterAuthId ? { patient_id: selectedPatientId as Id<"patients">, betterAuthId } : "skip"
+  );
 
   const seedUsers = useMutation(api.authSeeds.seedDemoUsers);
   const masterInit = useMutation(api.init.masterInit);
@@ -112,8 +131,147 @@ export default function AdminPage() {
     );
   }
 
+
+
+
+
   return (
     <div className="space-y-8 animate-fade-in">
+...
+      {/* Patient History Modal */}
+      {selectedPatientId && selectedPatientCivil && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                  <UserCheck size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-xl tracking-tight">
+                    {selectedPatientCivil.first_name} {selectedPatientCivil.last_name}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono uppercase tracking-widest mt-0.5">
+                    Civil Registry Record — ID: {selectedPatientCivil.national_id}
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" variant="ghost" className="font-bold text-slate-400 hover:text-slate-900" onPress={() => setSelectedPatientId(null)}>
+                Close
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Civil Details Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Date of Birth</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedPatientCivil.dob}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gender</p>
+                  <p className="text-sm font-bold text-slate-900 capitalize">{selectedPatientCivil.sex || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedPatientCivil.phone || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Commune/Wilaya</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedPatientCivil.commune}, {selectedPatientCivil.wilaya}</p>
+                </div>
+              </div>
+
+              {/* Admission History */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <CalendarDays size={16} className="text-blue-500" />
+                  Admission History
+                </h4>
+                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Admitted</th>
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Discharged</th>
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Type</th>
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!selectedPatientAdmissions || selectedPatientAdmissions.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-slate-400">No admission records found</td>
+                        </tr>
+                      ) : (
+                        selectedPatientAdmissions.map((a) => (
+                          <tr key={a._id} className="border-b border-slate-50 last:border-none">
+                            <td className="px-4 py-3 font-medium">{new Date(a.admitted_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 font-medium">{a.discharged_at ? new Date(a.discharged_at).toLocaleDateString() : "—"}</td>
+                            <td className="px-4 py-3 capitalize">{a.admission_type}</td>
+                            <td className="px-4 py-3">
+                              <Chip size="sm" color={a.status === "active" ? "success" : "default"} variant="soft" className="font-bold">
+                                {a.status}
+                              </Chip>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Billing Records */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                  <DollarSign size={16} className="text-emerald-500" />
+                  Billing History
+                </h4>
+                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Date</th>
+                        <th className="text-left px-4 py-3 font-bold text-slate-500">Category</th>
+                        <th className="text-right px-4 py-3 font-bold text-slate-500">Amount</th>
+                        <th className="text-center px-4 py-3 font-bold text-slate-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!selectedPatientBilling || selectedPatientBilling.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-slate-400">No billing records found</td>
+                        </tr>
+                      ) : (
+                        selectedPatientBilling.map((b) => (
+                          <tr key={b._id} className="border-b border-slate-50 last:border-none">
+                            <td className="px-4 py-3 font-medium">{new Date(b.billing_date).toLocaleDateString()}</td>
+                            <td className="px-4 py-3 capitalize">{b.service_category}</td>
+                            <td className="px-4 py-3 text-right font-bold text-slate-900">{b.amount.toLocaleString()} DZD</td>
+                            <td className="px-4 py-3 text-center">
+                              <Chip size="sm" color={b.payment_status === "paid" ? "success" : b.payment_status === "pending" ? "warning" : "default"} variant="soft" className="font-bold">
+                                {b.payment_status}
+                              </Chip>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <Button className="font-bold border border-slate-200" variant="ghost" onPress={() => setSelectedPatientId(null)}>Close Record</Button>
+              <Button className="font-bold bg-blue-600 text-white shadow-md shadow-blue-200" onPress={() => alert("Generating Full Billing Statement (PDF)...")}>
+                <FileText size={16} /> Print Statement
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
         <div className="flex items-center gap-4">
@@ -167,6 +325,7 @@ export default function AdminPage() {
       <div className="flex gap-2">
         {[
           { key: "console" as const, label: "Console", icon: Server },
+          { key: "patients" as const, label: "Patients", icon: UserCheck },
           { key: "admissions" as const, label: "Admissions", icon: CalendarDays },
           { key: "billing" as const, label: "Billing", icon: DollarSign },
         ].map((tab) => (
@@ -184,6 +343,72 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+
+      {/* Patients Tab - Civil Registry (Section 5) */}
+      {activeTab === "patients" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search civil registry by name or national ID..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium outline-none focus:border-slate-400"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {patients === undefined ? (
+              Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-2xl" />)
+            ) : patients.filter(p => !searchQuery || `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) || p.national_id.includes(searchQuery)).length === 0 ? (
+              <Card className="col-span-full border border-dashed border-slate-200 shadow-none bg-slate-50">
+                <div className="p-12 text-center">
+                  <UserCheck size={48} className="mx-auto text-slate-300 mb-4" />
+                  <h3 className="font-bold text-slate-700 text-lg mb-2">No Records Match Search</h3>
+                  <p className="text-slate-500 text-sm font-medium">Try a different name or ID.</p>
+                </div>
+              </Card>
+            ) : (
+              patients
+                .filter(p => !searchQuery || `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) || p.national_id.includes(searchQuery))
+                .map((p) => (
+                <Card key={p._id} className="border border-slate-200 shadow-sm hover:border-blue-300 transition-colors">
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-slate-900 text-lg">{p.first_name} {p.last_name}</h3>
+                      <Chip size="sm" color="default" variant="soft" className="font-black text-[9px] uppercase tracking-widest">CIVIL DATA</Chip>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">National ID</span>
+                        <span className="font-mono font-bold text-slate-900">{p.national_id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Date of Birth</span>
+                        <span className="font-bold text-slate-900">{p.dob}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Address</span>
+                        <span className="font-bold text-slate-900">{p.commune}, {p.wilaya}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-5">
+                      <Button size="sm" className="flex-1 font-bold bg-blue-600 text-white shadow-sm shadow-blue-100" onPress={() => alert("Generating Admission Certificate (PDF)...")}>
+                        <FileText size={14} /> Certificate
+                      </Button>
+                      <Button size="sm" variant="ghost" className="flex-1 font-bold text-slate-600 border border-slate-200" onPress={() => setSelectedPatientId(p._id)}>
+                        <CalendarDays size={14} /> History
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Admissions Tab - Civil Data Only (Section 5) */}
       {activeTab === "admissions" && (

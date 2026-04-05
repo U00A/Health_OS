@@ -21,13 +21,14 @@ import {
 import { Card, Button, Chip, Spinner, Skeleton } from "@heroui/react";
 
 import { Id } from "../../../convex/_generated/dataModel";
-import { VitalsHistory } from "@/components/patient/VitalsHistory";
 import { VitalStatusDashboard } from "@/components/patient/VitalStatusDashboard";
 import { HealthTimeline } from "@/components/patient/HealthTimeline";
+import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
 type PatientSection =
   | "dashboard"
+  | "speciality"
   | "lab-results"
   | "imaging"
   | "comptes-rendus"
@@ -156,7 +157,7 @@ function PatientPortalContent() {
 
       {/* Main Section Content */}
       <div className="py-2">
-        {renderSection(activeSection, patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
+        {renderSection(activeSection, patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors, searchParams)}
       </div>
 
     </div>
@@ -183,7 +184,8 @@ function renderSection(
   imagingFiles: unknown,
   compteRendus: unknown,
   prescriptions: unknown,
-  doctors: unknown
+  doctors: unknown,
+  searchParams: ReadonlyURLSearchParams
 ) {
   const labs = labResults as { _id: string; analysis_type: string; uploaded_at: number; values: Record<string, number | null> }[] | undefined;
   const images = imagingFiles as { _id: string; modality?: string; body_part: string; uploaded_at: number }[] | undefined;
@@ -194,30 +196,72 @@ function renderSection(
   switch (activeSection) {
     case "dashboard":
       return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card className="border border-slate-200 shadow-sm">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center">
-                  <Activity size={20} />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <Card className="border border-slate-200 shadow-sm">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center">
+                    <Activity size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900">Live Vitals Dashboard</h2>
+                    <p className="text-xs text-slate-400">Real-time health monitoring with visual indicators</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight text-slate-900">Live Vitals Dashboard</h2>
-                  <p className="text-xs text-slate-400">Real-time health monitoring with visual indicators</p>
-                </div>
+                <VitalStatusDashboard patientId={patientId} />
               </div>
-              <VitalStatusDashboard patientId={patientId} />
-            </div>
-          </Card>
+            </Card>
+            
+            <Card className="border border-slate-200 shadow-sm">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900">Assigned Clinical Team</h2>
+                    <p className="text-xs text-slate-400">Doctors currently overseeing your care</p>
+                  </div>
+                </div>
+                {docs && docs.length > 0 ? (
+                  <div className="space-y-3">
+                    {docs.map(doc => (
+                      <div key={doc._id} className="flex items-center justify-between p-3 border border-slate-100 rounded-lg bg-slate-50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs uppercase">
+                            {doc.name ? doc.name.split(' ').map(n=>n[0]).join('') : 'DR'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">{doc.name}</p>
+                            <p className="text-xs text-slate-500 capitalize">{doc.role?.replace('_', ' ') || 'Specialist'}</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="text-indigo-600 font-medium">Message</Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-slate-400 text-sm">No doctors assigned yet.</div>
+                )}
+              </div>
+            </Card>
+          </div>
+
           <Card className="border border-slate-200 shadow-sm">
             <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center">
                   <Activity size={20} />
                 </div>
                 <h2 className="text-lg font-bold tracking-tight text-slate-900">Vitals Trends</h2>
               </div>
-              <VitalsHistory patientId={patientId} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <VitalsTrendChart patientId={patientId} metric="weight" unit="kg" label="Weight Trend" normalRange={[50, 100]} />
+                <VitalsTrendChart patientId={patientId} metric="systolic_bp" unit="mmHg" label="Systolic BP" normalRange={[90, 120]} />
+                <VitalsTrendChart patientId={patientId} metric="heart_rate" unit="bpm" label="Heart Rate" normalRange={[60, 100]} />
+                <VitalsTrendChart patientId={patientId} metric="respiratory_rate" unit="/min" label="Respiratory Rate" normalRange={[12, 20]} />
+              </div>
             </div>
           </Card>
         </div>
@@ -235,6 +279,30 @@ function renderSection(
             </div>
             <p className="text-xs text-slate-400 mb-6">Complete chronological history of all your health events</p>
             <HealthTimeline patientId={patientId} />
+          </div>
+        </Card>
+      );
+
+    case "speciality":
+      const specId = searchParams.get("id") || "";
+      return (
+        <Card className="border border-slate-200 shadow-sm">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                <Activity size={20} />
+              </div>
+              <h2 className="text-lg font-bold tracking-tight text-slate-900 capitalize">{specId} Archive</h2>
+            </div>
+            <p className="text-xs text-slate-400 mb-6">Historical consultation records, prescriptions, and lab results for {specId}.</p>
+            
+            <div className="space-y-4">
+              <div className="p-12 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                <ClipboardList size={32} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-500 font-medium tracking-tight">No records found for this speciality.</p>
+                <p className="text-xs text-slate-400 mt-2">Visits to a {specId} specialist will appear here.</p>
+              </div>
+            </div>
           </div>
         </Card>
       );
@@ -465,71 +533,147 @@ function renderSection(
         </Card>
       );
 
-    case "appointments":
-      return (
-        <Card className="border border-slate-200 shadow-sm">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
-                <Calendar size={20} />
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">Upcoming Appointments</h2>
-            </div>
-            <div className="py-12 text-center">
-              <Calendar size={32} className="mx-auto text-slate-300 mb-3" />
-              <p className="text-slate-400 text-sm font-medium">No upcoming appointments scheduled</p>
-            </div>
-          </div>
-        </Card>
-      );
+     case "appointments":
+       return (
+         <Card className="border border-slate-200 shadow-sm">
+           <div className="p-6 space-y-5">
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                   <Calendar size={20} />
+                 </div>
+                 <div>
+                   <h2 className="text-lg font-bold tracking-tight text-slate-900">Upcoming Appointments</h2>
+                   <p className="text-xs text-slate-500">Your scheduled visits and follow-ups</p>
+                 </div>
+               </div>
+             </div>
 
-    case "messages":
-      return (
-        <Card className="border border-slate-200 shadow-sm">
-          <div className="p-6 space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
-                <MessageSquare size={20} />
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">Messages</h2>
-            </div>
-            <div className="border border-indigo-200 rounded-xl p-5 bg-indigo-50/30">
-              <h3 className="font-bold text-indigo-800 mb-3">Send Message to Your Doctor</h3>
-              <p className="text-xs text-indigo-600 mb-4">Use this form to send a structured symptom update to your enrolled private doctor.</p>
-              <div className="space-y-3">
-                <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
-                  <option value="">Select symptom type...</option>
-                  <option value="pain">Pain</option>
-                  <option value="fever">Fever</option>
-                  <option value="fatigue">Fatigue</option>
-                  <option value="nausea">Nausea</option>
-                  <option value="breathing">Breathing Difficulty</option>
-                  <option value="other">Other</option>
-                </select>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium text-slate-600">Severity (1-5):</label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button key={n} className={`w-8 h-8 rounded-lg font-bold text-sm border ${n <= 2 ? "bg-emerald-100 border-emerald-200 text-emerald-700" : n <= 3 ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-red-100 border-red-200 text-red-700"}`}>
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <input type="text" placeholder="Duration (e.g., 3 days)" className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none" />
-                <textarea placeholder="Additional notes (optional)" className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none min-h-[80px]" />
-                <Button className="font-bold bg-indigo-600 text-white">
-                  <Send size={14} /> Send Message
-                </Button>
-              </div>
-            </div>
-            <div className="py-8 text-center text-slate-400">
-              <MessageSquare size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">No messages yet</p>
-            </div>
-          </div>
-        </Card>
-      );
+             {/* Upcoming Appointment Card */}
+             <div className="space-y-3">
+               <div className="p-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl">
+                 <div className="flex items-center justify-between mb-3">
+                   <Chip size="sm" color="success" variant="soft" className="text-[9px] font-black uppercase tracking-widest">
+                     Next Appointment
+                   </Chip>
+                   <span className="text-xs text-slate-500 font-mono">Scheduled</span>
+                 </div>
+                 <div className="grid grid-cols-2 gap-3 mb-4">
+                   <div className="p-3 bg-white rounded-lg">
+                     <p className="text-xs text-slate-500 font-bold uppercase">Date</p>
+                     <p className="font-bold text-slate-900">--/--/----</p>
+                   </div>
+                   <div className="p-3 bg-white rounded-lg">
+                     <p className="text-xs text-slate-500 font-bold uppercase">Time</p>
+                     <p className="font-bold text-slate-900">--:--</p>
+                   </div>
+                   <div className="p-3 bg-white rounded-lg">
+                     <p className="text-xs text-slate-500 font-bold uppercase">Doctor</p>
+                     <p className="font-bold text-slate-900">TBD</p>
+                   </div>
+                   <div className="p-3 bg-white rounded-lg">
+                     <p className="text-xs text-slate-500 font-bold uppercase">Type</p>
+                     <p className="font-bold text-slate-900">Follow-Up</p>
+                   </div>
+                 </div>
+                 <p className="text-xs text-slate-500 italic">Appointments will be scheduled by your care team and appear here.</p>
+               </div>
+
+               <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                 <Calendar size={24} className="mx-auto mb-2 opacity-30" />
+                 <p className="text-sm font-medium">No additional appointments</p>
+               </div>
+             </div>
+           </div>
+         </Card>
+       );
+
+     case "messages":
+       return (
+         <Card className="border border-slate-200 shadow-sm">
+           <div className="p-6 space-y-6">
+             <div className="flex items-center gap-3 mb-4">
+               <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                 <MessageSquare size={20} />
+               </div>
+               <div>
+                 <h2 className="text-lg font-bold tracking-tight text-slate-900">Messages</h2>
+                 <p className="text-xs text-slate-500">Structured communication with your private doctor</p>
+               </div>
+             </div>
+
+             {/* Message Inbox */}
+             <div className="py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
+               <MessageSquare size={32} className="mx-auto mb-2 opacity-30" />
+               <p className="text-sm font-medium">No messages yet</p>
+               <p className="text-xs text-slate-400 mt-1">Messages from your doctor will appear here.</p>
+             </div>
+
+             {/* Send Message Form */}
+             <div className="border border-indigo-200 rounded-xl p-5 bg-indigo-50/30">
+               <h3 className="font-bold text-indigo-800 mb-3">Send Message to Your Doctor</h3>
+               <p className="text-xs text-indigo-600 mb-4">Use this form to send a structured symptom update to your enrolled private doctor.</p>
+               <div className="space-y-3">
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Recipient</label>
+                   <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                     <option value="">Select your doctor...</option>
+                     {docs && docs.length > 0 ? docs.map((d) => (
+                       <option key={d._id} value={d._id}>{d.name || "Doctor"}</option>
+                     )) : (
+                       <option value="" disabled>No doctors assigned</option>
+                     )}
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message Type</label>
+                   <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                     <option value="">Select type...</option>
+                     <option value="symptom_update">Symptom Update</option>
+                     <option value="medication_question">Medication Question</option>
+                     <option value="appointment_request">Appointment Request</option>
+                     <option value="test_results">Test Results Inquiry</option>
+                     <option value="general">General Inquiry</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Primary Symptom (if applicable)</label>
+                   <select className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none">
+                     <option value="">Select symptom type...</option>
+                     <option value="pain">Pain</option>
+                     <option value="fever">Fever</option>
+                     <option value="fatigue">Fatigue</option>
+                     <option value="nausea">Nausea</option>
+                     <option value="breathing">Breathing Difficulty</option>
+                     <option value="other">Other</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Severity (1-5)</label>
+                   <div className="flex gap-2">
+                     {[1, 2, 3, 4, 5].map((n) => (
+                       <button key={n} className={`w-10 h-10 rounded-lg font-bold text-sm border transition-all ${n <= 2 ? "bg-emerald-100 border-emerald-200 text-emerald-700 hover:bg-emerald-200" : n <= 3 ? "bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200" : "bg-red-100 border-red-200 text-red-700 hover:bg-red-200"}`}>
+                         {n}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Duration</label>
+                   <input type="text" placeholder="e.g., 3 days, since last week" className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message</label>
+                   <textarea placeholder="Describe your symptoms or question in detail..." className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm font-medium outline-none min-h-[100px] resize-none" />
+                 </div>
+                 <Button className="font-bold bg-indigo-600 text-white">
+                   <Send size={14} /> Send Message
+                 </Button>
+               </div>
+             </div>
+           </div>
+         </Card>
+       );
 
     default:
       return null;

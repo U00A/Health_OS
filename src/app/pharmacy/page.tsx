@@ -12,6 +12,14 @@ import { checkAllInteractions } from "@/lib/drugInteractions";
 
 type ActiveView = "queue" | "stats" | "history";
 
+// Controlled substance confirmation modal state
+interface ControlledConfirmState {
+  isOpen: boolean;
+  prescriptionId: string;
+  drugName: string;
+  reason: string;
+}
+
 export default function PharmacyInterface() {
   const betterAuthId = useBetterAuthId();
   const pendingQueue = useQuery(api.prescriptions.listPending, betterAuthId ? { betterAuthId } : "skip");
@@ -24,6 +32,8 @@ export default function PharmacyInterface() {
   const [partialDispense, setPartialDispense] = useState<string | null>(null);
   const [outOfStock, setOutOfStock] = useState<Record<number, { name: string; restockDate: string }>>({});
   const [activeView, setActiveView] = useState<ActiveView>("queue");
+  const [controlledConfirm, setControlledConfirm] = useState<ControlledConfirmState>({ isOpen: false, prescriptionId: "", drugName: "", reason: "" });
+  const [controlledVerified, setControlledVerified] = useState<Record<string, boolean>>({});
 
   const toggleVerify = (pid: string, idx: number) => {
     setVerified((prev) => {
@@ -293,8 +303,59 @@ export default function PharmacyInterface() {
                         </div>
                       )}
 
+                      {/* Controlled Substance Confirmation Modal */}
+                      {controlledConfirm.isOpen && controlledConfirm.prescriptionId === p._id && (
+                        <div className="mb-4 p-4 bg-purple-50 border border-purple-300 rounded-xl space-y-3">
+                          <h4 className="font-bold text-purple-800 text-sm flex items-center gap-2">
+                            <Lock size={16} /> Controlled Substance Confirmation
+                          </h4>
+                          <div className="p-3 bg-white rounded-lg border border-purple-200">
+                            <p className="text-sm font-bold text-slate-900 mb-1">{controlledConfirm.drugName}</p>
+                            <p className="text-xs text-slate-500">This medication requires mandatory reason documentation for audit purposes.</p>
+                          </div>
+                          <textarea
+                            rows={2}
+                            className="w-full p-3 rounded-lg border border-purple-200 bg-white text-sm font-medium outline-none resize-none"
+                            placeholder="Enter dispensing reason (required)..."
+                            value={controlledConfirm.reason}
+                            onChange={(e) => setControlledConfirm(prev => ({ ...prev, reason: e.target.value }))}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="font-bold bg-purple-600 text-white"
+                              isDisabled={!controlledConfirm.reason.trim()}
+                              onPress={() => {
+                                setControlledVerified(prev => ({ ...prev, [p._id]: true }));
+                                setControlledConfirm({ isOpen: false, prescriptionId: "", drugName: "", reason: "" });
+                              }}
+                            >
+                              <Lock size={14} /> Confirm & Log
+                            </Button>
+                            <Button size="sm" variant="ghost" onPress={() => setControlledConfirm({ isOpen: false, prescriptionId: "", drugName: "", reason: "" })}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
-                        <Button onPress={() => handleDispense(p._id)}
+                        <Button onPress={() => {
+                          // Check if any controlled substances need confirmation
+                          const hasControlled = p.medications.some((m: { name: string }) => {
+                            const controlledSubstances = ["morphine", "oxycodone", "fentanyl", "methadone", "tramadol", "codeine", "diazepam", "alprazolam", "lorazepam", "clonazepam", "methylphenidate", "amphetamine", "adderal"];
+                            return controlledSubstances.some(cs => m.name.toLowerCase().includes(cs));
+                          });
+                          if (hasControlled && !controlledVerified[p._id]) {
+                            const controlledMed = p.medications.find((m: { name: string }) => {
+                              const controlledSubstances = ["morphine", "oxycodone", "fentanyl", "methadone", "tramadol", "codeine", "diazepam", "alprazolam", "lorazepam", "clonazepam", "methylphenidate", "amphetamine", "adderal"];
+                              return controlledSubstances.some(cs => m.name.toLowerCase().includes(cs));
+                            });
+                            setControlledConfirm({ isOpen: true, prescriptionId: p._id, drugName: controlledMed?.name || "", reason: "" });
+                          } else {
+                            handleDispense(p._id);
+                          }
+                        }}
                           isDisabled={!allVerified(p._id, p.medications.length) || dispensing === p._id || hasSevere || partialDispense === p._id}
                           className={`flex-1 h-14 font-bold text-base rounded-xl shadow-xl transition-transform ${
                             hasSevere

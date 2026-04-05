@@ -103,6 +103,14 @@ export const create = mutation({
   },
 });
 
+export const listAll = query({
+  args: { betterAuthId: v.string() },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["admin", "administration"], args.betterAuthId);
+    return await ctx.db.query("patients").order("desc").take(100);
+  },
+});
+
 export const seedDemoPatient = mutation({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser, maskDocumentDoctor } from "./security";
 
 export const create = mutation({
   args: {
@@ -63,22 +63,42 @@ export const create = mutation({
 });
 
 export const listByPatient = query({
-  args: { patient_id: v.id("patients") },
+  args: { 
+    patient_id: v.id("patients"),
+    betterAuthId: v.optional(v.string()),
+    sessionToken: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
+    const user = args.betterAuthId ? await getUser(ctx, args.betterAuthId) : null;
+    
     const prescriptions = await ctx.db
       .query("prescriptions")
       .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id))
       .order("desc")
       .collect();
 
-    // Enrich with doctor name
+    // If it's a private doctor, apply restrictions
+    const isPrivateDoctor = user && user.role === "private_doctor";
+    const isPresent = args.sessionToken 
+      ? (await ctx.db
+          .query("biometric_sessions")
+          .withIndex("by_token", (q) => q.eq("session_token", args.sessionToken!))
+          .first())?.is_valid 
+      : false;
+
+    // Enrich with doctor name AND filter for private doctors in absent mode
     const enriched = await Promise.all(
       prescriptions.map(async (p) => {
-        const doctor = await ctx.db.get(p.doctor_id);
-        return { ...p, doctorName: doctor?.name || "Unknown" };
+        // If absent mode private doctor, skip if not their own
+        if (isPrivateDoctor && !isPresent && p.doctor_id !== user._id) {
+          return null;
+        }
+
+        return await maskDocumentDoctor(ctx, args.betterAuthId || null, p);
       })
     );
-    return enriched;
+    
+    return enriched.filter(Boolean);
   },
 });
 

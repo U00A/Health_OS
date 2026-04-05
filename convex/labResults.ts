@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, getUser } from "./security";
+import { requireRole, getUser, maskDocumentDoctor } from "./security";
 
 // ============================================================
 // Triple-Write Storage Rule (Section 9.1)
@@ -167,26 +167,52 @@ export const listByLab = query({
 });
 
 export const listByPatient = query({
-  args: { patient_id: v.id("patients") },
+  args: { 
+    patient_id: v.id("patients"),
+    betterAuthId: v.optional(v.string()),
+    sessionToken: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
+    const user = args.betterAuthId ? await getUser(ctx, args.betterAuthId) : null;
+    
     const results = await ctx.db
       .query("lab_results")
       .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id))
       .order("desc")
       .take(50);
 
-    // Enrich with order info
+    // If it's a private doctor, apply restrictions
+    const isPrivateDoctor = user && user.role === "private_doctor";
+    const isPresent = args.sessionToken 
+      ? (await ctx.db
+          .query("biometric_sessions")
+          .withIndex("by_token", (q) => q.eq("session_token", args.sessionToken!))
+          .first())?.is_valid 
+      : false;
+
+    // Enrich with order info AND filter for private doctors in absent mode
     const enriched = await Promise.all(
       results.map(async (r) => {
         const order = await ctx.db.get(r.order_id);
+        
+        // If absent mode private doctor, skip if not their own
+        if (isPrivateDoctor && !isPresent && order?.doctor_id !== user._id) {
+          return null;
+        }
+
+        const maskedDoc = await maskDocumentDoctor(ctx, args.betterAuthId || null, { ...r, doctor_id: order?.doctor_id });
+
         return {
           ...r,
+          ...maskedDoc,
           analysis_type: order?.analysis_type || "Unknown",
           urgency: order?.urgency || "routine",
           ordered_at: order?.ordered_at,
+          doctor_id: order?.doctor_id,
         };
       })
     );
-    return enriched;
+
+    return enriched.filter(Boolean);
   },
 });

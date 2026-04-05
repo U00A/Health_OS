@@ -72,6 +72,7 @@ export function HealthTimeline({ patientId }: HealthTimelineProps) {
   // Add lab results
   if (labResults) {
     for (const lr of labResults) {
+      if (!lr) continue;
       events.push({
         id: lr._id,
         date: lr.uploaded_at,
@@ -88,6 +89,7 @@ export function HealthTimeline({ patientId }: HealthTimelineProps) {
   // Add prescriptions
   if (prescriptions) {
     for (const rx of prescriptions) {
+      if (!rx) continue;
       events.push({
         id: rx._id,
         date: rx.issued_at,

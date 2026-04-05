@@ -72,9 +72,9 @@ export default function StaffDashboard() {
   // Helper: get scheduled medications for a patient in current shift
   const getPatientMeds = (patientId: string) => {
     if (!activePrescriptions) return [];
-    const patientRx = activePrescriptions.filter((rx: Doc<"prescriptions">) => rx.patient_id === patientId && rx.status === "active");
+    const patientRx = activePrescriptions.filter((rx: any) => rx && rx.patient_id === patientId && rx.status === "active");
     const allMeds: { name: string; dose: string; frequency: string }[] = [];
-    patientRx.forEach((rx: Doc<"prescriptions">) => {
+    patientRx.forEach((rx: any) => {
       rx.medications.forEach((med: { name: string; dose: string; frequency: string; duration: string; route?: string }) => {
         allMeds.push({ name: med.name, dose: med.dose, frequency: med.frequency });
       });

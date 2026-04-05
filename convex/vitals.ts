@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser, maskDocumentDoctor } from "./security";
 
 export const recordVitals = mutation({
   args: {
@@ -33,13 +33,23 @@ export const recordVitals = mutation({
 });
 
 export const listByPatient = query({
-  args: { patient_id: v.id("patients") },
+  args: { 
+    patient_id: v.id("patients"),
+    betterAuthId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const results = await ctx.db
       .query("vitals")
       .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id))
       .order("desc")
       .take(50);
+
+    return await Promise.all(
+      results.map(async (vit) => {
+        const masked = await maskDocumentDoctor(ctx, args.betterAuthId || null, { ...vit, doctor_id: vit.recorded_by });
+        return { ...vit, ...masked };
+      })
+    );
   },
 });
 
