@@ -1,7 +1,7 @@
 // v1.0.2 - Inline masking to avoid dynamic module import issues
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, getUser, maskDoctorIdentity } from "./security";
+import { requireRole, getUser, maskDocumentDoctor } from "./security";
 
 // Immutable insert (no update or delete)
 export const create = mutation({
@@ -60,31 +60,8 @@ export const listByPatient = query({
 
     const results = await baseQuery.order("desc").collect();
     
-    const finalResults = [];
-    for (const doc of results) {
-      const doctorId = doc.doctor_id;
-      let doctorName: string | undefined;
-      let doctorClinic: string | undefined;
-      let doctorContact: string | undefined;
-      
-      if (doctorId) {
-        const masked = await maskDoctorIdentity(ctx, args.betterAuthId || null, doctorId);
-        if (masked.doctorName === "Treating Physician") {
-          doctorName = "Treating Physician";
-        } else {
-          doctorName = masked.doctorName;
-          doctorClinic = masked.doctorClinic;
-          doctorContact = masked.doctorContact;
-        }
-      }
-      
-      finalResults.push({
-        ...doc,
-        doctorName,
-        doctorClinic,
-        doctorContact,
-      });
-    }
-    return finalResults;
+    return await Promise.all(
+      results.map((doc) => maskDocumentDoctor(ctx, args.betterAuthId || null, doc))
+    );
   },
 });

@@ -61,7 +61,7 @@ function PatientPortalContent() {
   );
   const compteRendus = useQuery(
     api.compte_rendus.listByPatient,
-    profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
+    profile ? { patient_id: profile._id as Id<"patients">, betterAuthId: authId || undefined } : "skip"
   );
   const imagingFiles = useQuery(
     api.imaging_files.getFilesByPatient,
@@ -186,7 +186,7 @@ function renderSection(
 ) {
   const labs = labResults as { _id: string; analysis_type: string; uploaded_at: number; values: Record<string, number | null> }[] | undefined;
   const images = imagingFiles as { _id: string; modality?: string; body_part: string; uploaded_at: number }[] | undefined;
-  const crs = compteRendus as { _id: string; diagnosis_code?: string; treatment_plan?: string; _creationTime: number }[] | undefined;
+  const crs = compteRendus as { _id: string; diagnosis_code?: string; treatment_plan?: string; doctorName?: string; _creationTime: number }[] | undefined;
   const rx = prescriptions as { _id: string; status: string; issued_at: number; doctorName?: string; medications: { name: string; dose: string; frequency: string; duration: string }[] }[] | undefined;
   const docs = doctors as { _id: string; name?: string; role?: string }[] | undefined;
 
@@ -419,8 +419,15 @@ function renderSection(
                 {crs.map((cr) => (
                   <div key={cr._id} className="border border-slate-100 rounded-xl p-4 bg-white hover:shadow-sm transition-shadow">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-bold text-slate-900 text-sm">
-                        {cr.diagnosis_code || "Clinical Consultation"}
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-slate-900 text-sm">
+                          {cr.diagnosis_code || "Clinical Consultation"}
+                        </div>
+                        {cr.doctorName && (
+                          <Chip size="sm" variant="flat" color="primary" className="text-[10px] font-bold">
+                            Dr. {cr.doctorName}
+                          </Chip>
+                        )}
                       </div>
                       <span className="text-xs text-slate-400 font-mono">
                         {new Date(cr._creationTime).toLocaleDateString()}
