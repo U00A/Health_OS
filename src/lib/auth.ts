@@ -13,7 +13,8 @@ const COOKIE_NAME = "health_os_session";
 
 // Get Convex client for server-side auth
 function getConvexClient(): ConvexHttpClient {
-  const url = process.env.NEXT_PUBLIC_CONVEX_URL || "https://dusty-dinosaur-1.eu-west-1.convex.cloud";
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!url) throw new Error("NEXT_PUBLIC_CONVEX_URL not set");
   return new ConvexHttpClient(url);
 }
 
@@ -53,7 +54,8 @@ export async function handleLogin(email: string, password: string): Promise<{ us
     await setAuthCookie(user);
     return { user, error: null };
   } catch (err: any) {
-    return { user: null, error: err.message || "Login failed" };
+    const error = err.message?.split("Uncaught Error: ")[1] || err.message || "Login failed";
+    return { user: null, error };
   }
 }
 
@@ -64,7 +66,8 @@ export async function handleSignup(email: string, password: string, name: string
     // Login after signup
     return handleLogin(email, password);
   } catch (err: any) {
-    return { user: null, error: err.message || "Signup failed" };
+    const error = err.message?.split("Uncaught Error: ")[1] || err.message || "Signup failed";
+    return { user: null, error };
   }
 }
 
