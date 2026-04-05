@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { Activity, ArrowLeft, Shield, CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -9,7 +9,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Spinner } from "@heroui/react";
 
-export default function PatientSignupPage() {
+function PatientSignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showSignup, setShowSignup] = useState(false);
@@ -109,5 +109,18 @@ export default function PatientSignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PatientSignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        <Spinner size="lg" />
+        <span className="text-sm font-medium text-slate-500 animate-pulse uppercase tracking-widest">Initialising Secure Registration...</span>
+      </div>
+    }>
+      <PatientSignupContent />
+    </Suspense>
   );
 }
