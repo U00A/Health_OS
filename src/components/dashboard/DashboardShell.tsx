@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { authClient } from "@/lib/auth-client";
 import { LogOut, Menu, X, Activity, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -73,7 +73,9 @@ export function DashboardShell({
 
         {/* Sidebar Content */}
         <div className="flex-1 overflow-y-auto px-4 pb-4" role="navigation" aria-label="Sidebar navigation">
-          {sidebarContent}
+          <Suspense fallback={<div className="animate-pulse space-y-2 p-2">{[1,2,3].map(i => <div key={i} className="h-10 bg-slate-100 rounded-lg" />)}</div>}>
+            {sidebarContent}
+          </Suspense>
         </div>
 
         {/* Sidebar Footer */}
