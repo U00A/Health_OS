@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { BellNotification } from "@/components/BellNotification";
 import { useNavigation, useSectionInfo, getDefaultBackRoute } from "@/hooks/useNavigation";
-import { authClient } from "@/lib/auth-client";
 
 export interface SectionLink {
   href: string;
@@ -102,7 +101,7 @@ export function GlobalNavigationHeader({
   }, [back, announce, currentPath]);
 
   const handleSignOut = async () => {
-    await authClient.signOut();
+    await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
   };
 

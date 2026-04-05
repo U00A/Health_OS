@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { authClient } from "@/lib/auth-client";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useBetterAuthId } from "./useBetterAuthId";
 import {
   UserRole,
   ROLE_NAVIGATION,
@@ -18,8 +18,7 @@ import {
  * Automatically filters navigation based on authenticated user's role.
  */
 export function useRoleNavigation() {
-  const { data: session } = authClient.useSession();
-  const betterAuthId = session?.user?.id;
+  const betterAuthId = useBetterAuthId();
   
   // Fetch user from Convex to get role
   const user = useQuery(
@@ -50,6 +49,6 @@ export function useRoleNavigation() {
     roleColor,
     roleTitle,
     canAccess,
-    isLoading: !user && !session,
+    isLoading: !user,
   };
 }
