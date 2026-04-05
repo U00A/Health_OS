@@ -227,3 +227,60 @@ export const checkPatientProfile = query({
     return { exists: !!patient, patient };
   },
 });
+
+// Delete patient and associated user account (admin only)
+export const deletePatient = mutation({
+  args: {
+    betterAuthId: v.string(),
+    patientId: v.id("patients"),
+  },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["admin"], args.betterAuthId);
+
+    const patient = await ctx.db.get(args.patientId);
+    if (!patient) throw new Error("Patient not found.");
+
+    // Delete associated user if exists
+    if (patient.user_id) {
+      const user = await ctx.db.get(patient.user_id);
+      if (user) {
+        // Delete the user
+        await ctx.db.delete(patient.user_id);
+      }
+    }
+
+    // Delete the patient record
+    await ctx.db.delete(args.patientId);
+
+    return { success: true };
+  },
+});
+
+// Delete all patients and their associated users (admin only - for testing)
+export const deleteAllPatients = mutation({
+  args: {
+    betterAuthId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, ["admin"], args.betterAuthId);
+
+    const allPatients = await ctx.db.query("patients").collect();
+    let deletedCount = 0;
+
+    for (const patient of allPatients) {
+      // Delete associated user if exists
+      if (patient.user_id) {
+        const user = await ctx.db.get(patient.user_id);
+        if (user) {
+          // Delete the user
+          await ctx.db.delete(patient.user_id);
+        }
+      }
+      // Delete the patient record
+      await ctx.db.delete(patient._id);
+      deletedCount++;
+    }
+
+    return { success: true, deletedCount };
+  },
+});
