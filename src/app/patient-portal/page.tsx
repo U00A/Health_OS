@@ -21,6 +21,7 @@ import {
 import { Card, Button, Chip, Spinner, Skeleton } from "@heroui/react";
 
 import { Id } from "../../../convex/_generated/dataModel";
+import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { VitalStatusDashboard } from "@/components/patient/VitalStatusDashboard";
 import { HealthTimeline } from "@/components/patient/HealthTimeline";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
@@ -41,7 +42,8 @@ type PatientSection =
 function PatientPortalContent() {
   const searchParams = useSearchParams();
   const activeSection = (searchParams?.get("section") as PatientSection) || "dashboard";
-  const profile = useQuery(api.patients.getMyProfile, "skip");
+  const betterAuthId = useBetterAuthId();
+  const profile = useQuery(api.patients.getMyProfile, betterAuthId ? { betterAuthId } : "skip");
 
   // Always call hooks at the top level
   const prescriptions = useQuery(
@@ -79,30 +81,15 @@ function PatientPortalContent() {
 
   // Redirect to signup if no profile
   if (profile === null) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/patient-signup";
+    }
     return (
-      <div className="max-w-lg mx-auto">
-        <Card className="border border-slate-200 shadow-xl shadow-slate-200/50">
-          <div className="p-10 text-center space-y-6">
-            <div className="mx-auto w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center border border-blue-100">
-              <Shield size={36} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Complete Your Registration</h2>
-              <p className="text-slate-500 font-medium mt-2">Your account has been created but your patient profile is not set up yet.</p>
-            </div>
-            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-4">
-              <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                Please complete your patient profile to access your health dashboard.
-              </p>
-              <button
-                onClick={() => window.location.href = "/patient-signup"}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all"
-              >
-                Complete Registration
-              </button>
-            </div>
-          </div>
-        </Card>
+      <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-4 text-blue-600">
+          <Spinner size="lg" />
+          <span className="font-bold tracking-widest uppercase text-xs">Redirecting to Registration...</span>
+        </div>
       </div>
     );
   }

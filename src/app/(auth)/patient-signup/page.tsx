@@ -12,22 +12,20 @@ import { Spinner } from "@heroui/react";
 function PatientSignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showSignup, setShowSignup] = useState(false);
-  const [authComplete, setAuthComplete] = useState(false);
+  const [showSignup, setShowSignup] = useState(true);
+  const [authComplete, setAuthComplete] = useState(true);
 
-  // Listen for successful auth
-  const handleAuthSuccess = useCallback(() => {
-    setAuthComplete(true);
+  const listenForAuth = useCallback(() => {
     setShowSignup(true);
   }, []);
 
   useEffect(() => {
-    window.addEventListener("auth-success", handleAuthSuccess);
-    return () => window.removeEventListener("auth-success", handleAuthSuccess);
-  }, [handleAuthSuccess]);
+    window.addEventListener("auth-success", listenForAuth);
+    return () => window.removeEventListener("auth-success", listenForAuth);
+  }, [listenForAuth]);
 
-  // If coming from successful signup, redirect to portal
-  const betterAuthId = searchParams.get("auth_id");
+  // Use session-based auth_id
+  const betterAuthId = searchParams.get("auth_id") || "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -70,7 +68,10 @@ function PatientSignupContent() {
 
               {/* Auth Form */}
               <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-                <AuthForm onSignupSuccess={() => setShowSignup(true)} />
+              <AuthForm onSignupSuccess={() => {
+                setShowSignup(true);
+                setAuthComplete(true);
+              }} />
               </div>
 
               <div className="text-center">

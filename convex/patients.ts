@@ -27,7 +27,7 @@ export const updateContactInfo = mutation({
 });
 
 export const getMyProfile = query({
-  args: { betterAuthId: v.string() },
+  args: { betterAuthId: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query("users")

@@ -9,6 +9,7 @@ const protectedPrefixes = [
   "/pharmacy",
   "/lab",
   "/patient-portal",
+  "/patient-signup",
 ];
 
 const COOKIE_NAME = "health_os_session";
