@@ -6,8 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import { Card, Button, Chip, Skeleton } from "@heroui/react";
 import {
   Building2, UserPlus, Users, FileText, Pill, Beaker,
-  AlertTriangle, UserRound, Plus, TrendingUp, Fingerprint, Eye, EyeOff,
-  ClipboardList, Save, StickyNote, Calendar, Clock, TestTube, Activity, CalendarDays
+  AlertTriangle, UserRound, Plus, TrendingUp, Fingerprint, EyeOff,
+  ClipboardList, Save, StickyNote, Clock, TestTube, Activity, CalendarDays
 } from "lucide-react";
 import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { useBetterAuthId } from "@/hooks/useBetterAuthId";
@@ -133,26 +133,46 @@ export default function PrivatePage() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-teal-100 rounded-2xl flex items-center justify-center">
-            <Building2 className="text-teal-600 w-6 h-6" />
+        <div className="flex items-center gap-5">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-teal-400 blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <div className="relative w-14 h-14 bg-linear-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-200">
+              <Building2 className="text-white w-7 h-7" />
+            </div>
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Private Practice</h1>
-            <p className="text-slate-500 font-medium mt-1">
-              {rawPatients !== undefined ? `${patients.length} enrolled patients` : "Loading..."}
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+              Private Practice
+              <Chip size="sm" variant="soft" color="success" className="font-black uppercase text-[10px] tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">Active</Chip>
+            </h1>
+            <p className="text-slate-500 font-medium mt-1.5 flex items-center gap-2">
+              <Users size={14} className="text-slate-400" />
+              {rawPatients !== undefined ? (
+                <span className="text-slate-600 font-bold">{patients.length} enrolled patients</span>
+              ) : (
+                <span className="animate-pulse">Synchronizing records...</span>
+              )}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           {!selectedPatient ? (
             <>
-              <Button className="font-bold bg-teal-600 text-white shadow-md shadow-teal-200" onPress={() => setShowSearch(true)}>
-                <UserPlus size={16} /> Enroll Patient
+            <div className="flex items-center gap-3">
+              <Button 
+                className="font-black bg-slate-900 text-white shadow-xl shadow-slate-200 h-12 px-6 rounded-xl hover:scale-105 active:scale-95 transition-all" 
+                onPress={() => setShowSearch(true)}
+              >
+                <UserPlus size={18} className="mr-1" /> Enroll Patient
               </Button>
-              <Button variant="ghost" className="font-bold text-teal-700 border border-teal-200" onPress={() => setActiveView("register")}>
-                <Plus size={16} /> Register New
+              <Button 
+                variant="outline" 
+                className="font-black text-slate-700 border-2 border-slate-200 h-12 px-6 rounded-xl hover:bg-slate-50 transition-all" 
+                onPress={() => setActiveView("register")}
+              >
+                <Plus size={18} className="mr-1" /> Register New
               </Button>
+            </div>
             </>
           ) : (
             <div className="flex gap-2">
@@ -190,45 +210,42 @@ export default function PrivatePage() {
       </div>
 
       {/* Consultation Mode Banner */}
-      {selectedPatient && consultationMode && (
-        <div className={`p-4 rounded-xl border flex items-center justify-between ${
+        <div className={`p-5 rounded-2xl border-2 flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 duration-500 ${
           consultationMode === "present"
-            ? "bg-emerald-50 border-emerald-200"
-            : "bg-amber-50 border-amber-200"
+            ? "bg-emerald-50/50 border-emerald-100/50 backdrop-blur-md"
+            : "bg-amber-50/50 border-amber-100/50 backdrop-blur-md"
         }`}>
-          <div className="flex items-center gap-3">
-            {consultationMode === "present" ? (
-              <>
-                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <Fingerprint size={16} className="text-emerald-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-emerald-800 text-sm">Patient-Present Mode — Active Consultation</p>
-                  <p className="text-xs text-emerald-600">Full clinical access with biometric confirmation</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <EyeOff size={16} className="text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-amber-800 text-sm">Patient-Absent Mode — Record Review</p>
-                  <p className="text-xs text-amber-600">Restricted to your own clinical output only</p>
-                </div>
-              </>
-            )}
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+              consultationMode === "present" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+            }`}>
+              {consultationMode === "present" ? <Fingerprint size={24} /> : <EyeOff size={24} />}
+            </div>
+            <div>
+              <p className={`font-black text-base tracking-tight ${consultationMode === "present" ? "text-emerald-900" : "text-amber-900"}`}>
+                {consultationMode === "present" ? "Patient-Present Mode" : "Patient-Absent (Record Review)"}
+              </p>
+              <p className={`text-sm font-medium ${consultationMode === "present" ? "text-emerald-600" : "text-amber-600"}`}>
+                {consultationMode === "present" 
+                  ? "Full clinical read/write access authorized via biometric confirmation" 
+                  : "Clinical access restricted to your own authored records only"
+                }
+              </p>
+            </div>
           </div>
           <Button
-            size="sm"
+            size="md"
             variant="ghost"
-            className={`font-bold ${consultationMode === "present" ? "text-emerald-700" : "text-amber-700"}`}
+            className={`font-black uppercase text-xs tracking-widest px-6 ${
+              consultationMode === "present" 
+                ? "bg-emerald-200/50 text-emerald-800 hover:bg-emerald-200" 
+                : "bg-amber-200/50 text-amber-800 hover:bg-amber-200"
+            }`}
             onPress={handleExitConsultation}
           >
-            Exit
+            End Session
           </Button>
         </div>
-      )}
 
       {/* Patient Header */}
       {selectedPatient && (
@@ -544,7 +561,7 @@ export default function PrivatePage() {
             ) : (
               <div className="py-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl">
                 <FileText size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">Click "Show All Docs" to view all patient documents</p>
+                <p className="text-sm font-medium">Click &quot;Show All Docs&quot; to view all patient documents</p>
                 <p className="text-xs text-slate-400 mt-1">In patient-present mode, you have full visibility to all clinical documents.</p>
               </div>
             )}
@@ -843,49 +860,85 @@ export default function PrivatePage() {
               </div>
             </Card>
           ) : (
-            patients.map((p) => (
-              <div
-                key={p._id}
-                onClick={() => handleSelectPatient(p as unknown as Doc<"patients">)}
-                className="border border-slate-200 shadow-sm hover:border-teal-300 transition-all group cursor-pointer rounded-2xl bg-white"
-              >
-                <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                      p.allergies && p.allergies.length > 0 ? "bg-rose-100 text-rose-600" : "bg-teal-50 text-teal-600"
-                    }`}>
-                      <UserRound size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-lg">{p.first_name} {p.last_name}</h3>
-                      <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                        <span className="font-mono bg-slate-100 px-2 rounded text-xs">{p.national_id}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>DOB: {p.dob}</span>
-                      </div>
-                      {p.allergies && p.allergies.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <AlertTriangle size={12} className="text-red-500" />
-                          {p.allergies.map((a) => (
-                            <Chip key={a} size="sm" color="danger" variant="soft" className="text-[9px] font-black uppercase">
-                              {a}
-                            </Chip>
-                          ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {patients.map((p, idx) => (
+                <div
+                  key={p._id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectPatient(p as unknown as Doc<"patients">)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectPatient(p as unknown as Doc<"patients">); }}
+                  className="group relative overflow-hidden h-full border-none shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 animate-in fade-in slide-in-from-bottom-5 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl"
+                  style={{ animationDelay: `${idx * 100}ms`, animationFillMode: "both" }}
+                >
+                  <Card className="border-none shadow-none group-hover:bg-slate-50/50 transition-colors h-full">
+                    <div className="p-0 h-full flex flex-col">
+                      {/* Top Accent Bar */}
+                      <div className={`h-1.5 w-full ${
+                        p.allergies && p.allergies.length > 0 ? "bg-rose-500" : "bg-teal-500"
+                      }`} />
+                      
+                      <div className="p-6 flex flex-col h-full bg-white">
+                      <div className="flex items-start justify-between mb-5">
+                        <div className="relative">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
+                            p.allergies && p.allergies.length > 0 ? "bg-rose-100 text-rose-600" : "bg-teal-100 text-teal-600"
+                          }`}>
+                            <UserRound size={28} />
+                          </div>
+                          {p.blood_type && (
+                            <div className="absolute -bottom-1 -right-1 bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg shadow-sm">
+                              <span className="text-[10px] font-black text-slate-900">{p.blood_type}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        
+                        <div className="flex flex-col gap-1.5">
+                          {p.activePrescriptionCount > 0 && (
+                            <Chip size="sm" variant="soft" color="default" className="font-black text-[9px] uppercase tracking-widest pl-1">
+                              <Pill size={10} className="mr-1" /> {p.activePrescriptionCount} Rx
+                            </Chip>
+                          )}
+                          {p.pendingLabCount > 0 && (
+                            <Chip size="sm" variant="soft" color="warning" className="font-black text-[9px] uppercase tracking-widest pl-1">
+                              <Beaker size={10} className="mr-1" /> {p.pendingLabCount} Labs
+                            </Chip>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex-1">
+                        <h3 className="font-black text-slate-900 text-xl tracking-tight leading-tight group-hover:text-blue-700 transition-colors">
+                          {p.first_name} {p.last_name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1 mb-4">
+                          <span className="font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-bold ring-1 ring-slate-200/50">
+                            {p.national_id}
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{p.dob}</span>
+                        </div>
+
+                        {p.allergies && p.allergies.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-auto pt-4 border-t border-slate-100">
+                            <AlertTriangle size={12} className="text-rose-500 shrink-0" />
+                            {p.allergies.slice(0, 3).map((a) => (
+                              <span key={a} className="text-[9px] font-black uppercase tracking-tighter text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                                {a}
+                              </span>
+                            ))}
+                            {p.allergies.length > 3 && (
+                              <span className="text-[9px] font-black text-slate-400">+{p.allergies.length - 3} more</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {p.activePrescriptionCount > 0 && (
-                      <Chip size="sm" color="accent" variant="soft" className="text-[9px] font-black uppercase">{p.activePrescriptionCount} Rx</Chip>
-                    )}
-                    {p.pendingLabCount > 0 && (
-                      <Chip size="sm" color="warning" variant="soft" className="text-[9px] font-black uppercase">{p.pendingLabCount} labs</Chip>
-                    )}
-                  </div>
+                    </div>
+                  </Card>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}

@@ -1,7 +1,7 @@
-// v1.0.1 - Cache-busting deploy for identity stabilization
+// v1.0.2 - Inline masking to avoid dynamic module import issues
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, getUser, maskDocumentDoctor } from "./security";
+import { requireRole, getUser, maskDoctorIdentity } from "./security";
 
 // Immutable insert (no update or delete)
 export const create = mutation({
@@ -15,12 +15,7 @@ export const create = mutation({
     content_html: v.string(),
   },
   handler: async (ctx, args) => {
-    // Only doctors can create a compte rendu
     const user = await requireRole(ctx, ["medecin_etat", "private_doctor"], args.betterAuthId);
-
-    // Enforce patient assignment or access here based on business logic
-    // (Skipped granular assignment check for brevity in mutation, 
-    // real app would call requirePatientAccess)
 
     const compteRenduId = await ctx.db.insert("compte_rendus", {
       patient_id: args.patient_id,
@@ -50,7 +45,6 @@ export const listByPatient = query({
       .query("compte_rendus")
       .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id));
 
-    // If it's a private doctor, apply restrictions
     if (user && user.role === "private_doctor") {
       const isPresent = args.sessionToken 
         ? (await ctx.db
@@ -60,18 +54,36 @@ export const listByPatient = query({
         : false;
       
       if (!isPresent) {
-        // Patient-Absent Mode: Only own records
         baseQuery = baseQuery.filter((q) => q.eq(q.field("doctor_id"), user._id));
       }
     }
 
     const results = await baseQuery.order("desc").collect();
     
-    // Explicitly process records to avoid potential bundler/runtime issues with mapping
     const finalResults = [];
     for (const doc of results) {
-       const masked = await maskDocumentDoctor(ctx, args.betterAuthId || null, doc);
-       finalResults.push(masked);
+      const doctorId = doc.doctor_id;
+      let doctorName: string | undefined;
+      let doctorClinic: string | undefined;
+      let doctorContact: string | undefined;
+      
+      if (doctorId) {
+        const masked = await maskDoctorIdentity(ctx, args.betterAuthId || null, doctorId);
+        if (masked.doctorName === "Treating Physician") {
+          doctorName = "Treating Physician";
+        } else {
+          doctorName = masked.doctorName;
+          doctorClinic = masked.doctorClinic;
+          doctorContact = masked.doctorContact;
+        }
+      }
+      
+      finalResults.push({
+        ...doc,
+        doctorName,
+        doctorClinic,
+        doctorContact,
+      });
     }
     return finalResults;
   },

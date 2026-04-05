@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import {
-  Activity,
   ShieldCheck,
   Stethoscope,
   Microscope,
@@ -228,10 +228,10 @@ export default function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
-              <img src="/favicon.png" alt="HealthOS" className="w-full h-full object-contain" />
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-sm group-hover:scale-105 transition-transform overflow-hidden border border-slate-100">
+              <Image src="/favicon.png" alt="HealthOS" width={40} height={40} className="w-full h-full object-contain" />
             </div>
-            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">Health<span className="text-blue-600">OS</span></span>
+            <span className="text-xl font-black tracking-tight text-slate-900 italic">Health<span className="text-blue-600">OS</span></span>
           </Link>
 
           <div className="hidden md:flex items-center gap-10 text-[11px] font-bold uppercase tracking-[0.25em] text-slate-400">
@@ -438,10 +438,10 @@ export default function LandingPage() {
       <footer className="border-t border-slate-200/50 bg-white py-20 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex items-center gap-4 group">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 p-2 shadow-sm">
-              <img src="/favicon.png" alt="HealthOS" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 p-2 shadow-sm border border-slate-100">
+              <Image src="/favicon.png" alt="HealthOS" width={48} height={48} className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-800">Health<span className="text-blue-600">OS</span></span>
+            <span className="text-2xl font-black tracking-tight text-slate-800 italic">Health<span className="text-blue-600">OS</span></span>
           </div>
           <div className="flex gap-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
             <span className="cursor-pointer hover:text-blue-600 transition-colors">Protocol</span>

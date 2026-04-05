@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { Activity, ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { DemoCredentials } from "@/components/auth/DemoCredentials";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,7 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6">
         <div className="flex items-center justify-between">
@@ -25,10 +26,10 @@ export default function LoginPage() {
               Back to Platform
             </button>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-              <Activity className="h-4 w-4 text-white" />
+            <div className="w-10 h-10 bg-white rounded-xl shadow-xs overflow-hidden flex items-center justify-center p-1.5 border border-slate-100">
+              <Image src="/logo.png" alt="HealthOS" width={40} height={40} className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-lg text-slate-700">HealthOS</span>
+            <span className="font-black text-xl text-slate-800 tracking-tight">HealthOS</span>
           </div>
         </div>
       </div>
@@ -37,9 +38,9 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center px-4 py-20">
         <div className="w-full max-w-md space-y-8">
           {/* Branding Section */}
-          <div className="text-center space-y-4">
-            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg p-2 overflow-hidden">
-              <img src="/logo.png" alt="HealthOS Logo" className="w-full h-full object-contain" />
+          <div className="text-center space-y-5">
+            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto shadow-xl p-3 border border-slate-100 overflow-hidden transform hover:rotate-3 transition-transform duration-500">
+              <Image src="/logo.png" alt="HealthOS Logo" width={96} height={96} className="w-full h-full object-contain" priority />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Welcome to HealthOS</h1>
