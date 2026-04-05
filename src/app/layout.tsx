@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   title: "HealthOS — Unified Clinical Platform",
   description: "Role-gated, real-time hospital & clinic management system with immutable patient records and encrypted clinical workflows.",
   keywords: ["healthcare", "hospital management", "clinical platform", "patient records", "HIPAA"],
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

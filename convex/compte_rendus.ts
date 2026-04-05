@@ -66,8 +66,12 @@ export const listByPatient = query({
 
     const results = await baseQuery.order("desc").collect();
     
-    return Promise.all(
-      results.map((doc) => maskDocumentDoctor(ctx, args.betterAuthId || null, doc))
-    );
+    // Explicitly process records to avoid potential bundler/runtime issues with mapping
+    const finalResults = [];
+    for (const doc of results) {
+       const masked = await maskDocumentDoctor(ctx, args.betterAuthId || null, doc);
+       finalResults.push(masked);
+    }
+    return finalResults;
   },
 });

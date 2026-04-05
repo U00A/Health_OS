@@ -38,8 +38,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Branding Section */}
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-              <Activity className="h-8 w-8 text-white" />
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg p-2 overflow-hidden">
+              <img src="/logo.png" alt="HealthOS Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Welcome to HealthOS</h1>

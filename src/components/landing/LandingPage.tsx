@@ -228,8 +228,8 @@ export default function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+              <img src="/favicon.png" alt="HealthOS" className="w-full h-full object-contain" />
             </div>
             <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">Health<span className="text-blue-600">OS</span></span>
           </Link>
@@ -438,8 +438,8 @@ export default function LandingPage() {
       <footer className="border-t border-slate-200/50 bg-white py-20 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex items-center gap-4 group">
-            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center transition-all group-hover:bg-blue-50 group-hover:scale-105">
-              <Activity className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 p-2 shadow-sm">
+              <img src="/favicon.png" alt="HealthOS" className="w-full h-full object-contain" />
             </div>
             <span className="text-2xl font-black tracking-tight text-slate-800">Health<span className="text-blue-600">OS</span></span>
           </div>
