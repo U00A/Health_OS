@@ -5,8 +5,6 @@ import { Activity, ArrowLeft, Shield, CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { PatientSignupForm } from "@/components/auth/PatientSignupForm";
-import { useQuery } from "convex/react";
-import { api } from "../../../../convex/_generated/api";
 import { Spinner } from "@heroui/react";
 
 function PatientSignupContent() {
@@ -14,18 +12,20 @@ function PatientSignupContent() {
   const searchParams = useSearchParams();
   const [showSignup, setShowSignup] = useState(true);
   const [authComplete, setAuthComplete] = useState(true);
+  const [betterAuthId, setBetterAuthId] = useState(searchParams.get("auth_id") || "");
 
-  const listenForAuth = useCallback(() => {
+  const listenForAuth = useCallback((e: Event) => {
     setShowSignup(true);
+    const detail = (e as CustomEvent).detail as { betterAuthId?: string };
+    if (detail?.betterAuthId) {
+      setBetterAuthId(detail.betterAuthId);
+    }
   }, []);
 
   useEffect(() => {
     window.addEventListener("auth-success", listenForAuth);
     return () => window.removeEventListener("auth-success", listenForAuth);
   }, [listenForAuth]);
-
-  // Use session-based auth_id
-  const betterAuthId = searchParams.get("auth_id") || "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
