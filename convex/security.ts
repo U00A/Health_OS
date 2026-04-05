@@ -178,13 +178,6 @@ export async function validateBiometricSession(
 // Patients see full identity (right to know who treated them).
 // ============================================================
 
-type DoctorInfo = {
-  doctorName?: string;
-  doctorClinic?: string;
-  doctorContact?: string;
-  doctorId?: Id<"users">;
-};
-
 /**
  * Masks private doctor identity when the caller is a private doctor.
  * Returns anonymised "Treating Physician" for private doctors viewing other private doctors' work.
@@ -294,10 +287,10 @@ export async function maskDocumentDoctor<T extends { doctor_id?: Id<"users"> }>(
   callerBetterAuthId: string | null,
   doc: T
 ): Promise<T & { doctorName?: string; doctorClinic?: string; doctorContact?: string }> {
-  if (!doc.doctor_id) return { ...doc } as any;
+  if (!doc.doctor_id) return { ...doc } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
 
   const masked = await maskDoctorIdentity(ctx, callerBetterAuthId, doc.doctor_id);
-  const result = { ...doc } as any;
+  const result: T & { doctorName?: string; doctorClinic?: string; doctorContact?: string } = { ...doc };
 
   if (masked.doctorName === "Treating Physician") {
     result.doctorName = "Treating Physician";
@@ -327,6 +320,6 @@ export function isAdminRole(role: string | undefined): boolean {
 
 // Strip all clinical fields from patient data for admin role
 export function stripClinicalForAdmin<T extends Record<string, unknown>>(data: T): Omit<T, "blood_type" | "allergies" | "diagnoses" | "medications"> {
-  const { blood_type, allergies, ...rest } = data as unknown as Record<string, unknown>;
+  const { blood_type: _, allergies: __, diagnoses: ___, medications: ____, ...rest } = data as unknown as Record<string, unknown>;
   return rest as Omit<T, "blood_type" | "allergies" | "diagnoses" | "medications">;
 }

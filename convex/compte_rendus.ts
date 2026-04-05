@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser, maskDocumentDoctor } from "./security";
 
 // Immutable insert (no update or delete)
 export const create = mutation({
@@ -43,10 +43,7 @@ export const listByPatient = query({
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = args.betterAuthId ? await ctx.db
-      .query("users")
-      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId!))
-      .first() : null;
+    const user = args.betterAuthId ? await getUser(ctx, args.betterAuthId) : null;
     
     let baseQuery = ctx.db
       .query("compte_rendus")
@@ -68,10 +65,6 @@ export const listByPatient = query({
     }
 
     const results = await baseQuery.order("desc").collect();
-
-    // Apply masking helper from security.ts
-    // Import from security.ts at top level would be better, but we need to ensure it's available
-    const { maskDocumentDoctor } = await import("./security");
     
     return await Promise.all(
       results.map(async (doc) => {

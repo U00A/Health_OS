@@ -53,7 +53,7 @@ const commonConditions = [
   "Kidney Disease",
 ];
 
-export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormProps) {
+export function PatientSignupForm({ authId }: PatientSignupFormProps) {
   const router = useRouter();
   const selfRegister = useMutation(api.patients.selfRegister);
 
@@ -109,7 +109,6 @@ export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormPro
   };
 
   const canProceedStep1 = nationalId && firstName && lastName && dob && sex;
-  const canProceedStep2 = true; // Medical info is optional
   const canProceedStep3 = phone && wilaya;
 
   const handleSubmit = useCallback(
@@ -133,6 +132,7 @@ export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormPro
           commune: commune || undefined,
           allergies: allergies.length > 0 ? allergies : undefined,
           emergency_contact: emergencyContact || undefined,
+          existing_conditions: conditions.length > 0 ? conditions : undefined,
         });
 
         setSuccess("Patient profile created successfully! Redirecting to your dashboard...");
@@ -157,6 +157,7 @@ export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormPro
       commune,
       allergies,
       emergencyContact,
+      conditions,
       router,
     ]
   );
@@ -189,6 +190,7 @@ export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormPro
               <User className="w-7 h-7 text-blue-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">Personal Information</h2>
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             <p className="text-sm text-slate-500">Let's start with your basic details</p>
           </div>
 
@@ -541,10 +543,10 @@ export function PatientSignupForm({ authId, defaultEmail }: PatientSignupFormPro
             type="button"
             onClick={() => {
               if (step === 1 && !canProceedStep1) return;
-              if (step === 3 && !canProceedStep3) return;
+              if (step === 2 && !canProceedStep3) return;
               setStep(step + 1);
             }}
-            disabled={step === 1 && !canProceedStep1}
+            disabled={(step === 1 && !canProceedStep1) || (step === 2 && !canProceedStep3)}
             className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Next

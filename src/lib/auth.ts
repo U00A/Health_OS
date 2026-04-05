@@ -54,8 +54,10 @@ export async function handleLogin(email: string, password: string): Promise<{ us
     const user = await convex.mutation(api.auth.login, { email, password });
     await setAuthCookie(user);
     return { user, error: null };
-  } catch (err: any) {
-    const error = err.message?.split("Uncaught Error: ")[1] || err.message || "Login failed";
+  } catch (err) {
+    const error = err instanceof Error
+      ? err.message.split("Uncaught Error: ")[1] || err.message
+      : "Login failed";
     return { user: null, error };
   }
 }
@@ -66,8 +68,10 @@ export async function handleSignup(email: string, password: string, name: string
     await convex.mutation(api.auth.register, { email, password, name, role: role || "patient" });
     // Login after signup
     return handleLogin(email, password);
-  } catch (err: any) {
-    const error = err.message?.split("Uncaught Error: ")[1] || err.message || "Signup failed";
+  } catch (err) {
+    const error = err instanceof Error
+      ? err.message.split("Uncaught Error: ")[1] || err.message
+      : "Signup failed";
     return { user: null, error };
   }
 }
