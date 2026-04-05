@@ -56,6 +56,14 @@ export const deleteUserByEmail = mutation({
   },
 });
 
+// List all users (for debugging/cleanup)
+export const listAll = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
 // Delete all users with patient role (admin only)
 export const deleteAllPatientUsers = mutation({
   args: {
