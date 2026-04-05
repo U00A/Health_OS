@@ -33,12 +33,16 @@ export const register = mutation({
       throw new Error("Email already exists");
     }
 
+    // Generate a deterministic betterAuthId so existing Convex queries work
+    const betterAuthId = "local_" + args.email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+
     const userId = await ctx.db.insert("users", {
       email: args.email.toLowerCase(),
       name: args.name,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: args.role as any || "patient",
       passwordHash: hashPassword(args.password),
+      betterAuthId,
     });
 
     return { userId };
@@ -69,6 +73,7 @@ export const login = mutation({
       email: user.email ?? "",
       name: user.name ?? "",
       role: user.role ?? "patient",
+      betterAuthId: user.betterAuthId ?? "",
     };
   },
 });
@@ -82,6 +87,6 @@ export const getUserByEmail = query({
       .first();
 
     if (!user) return null;
-    return { id: user._id, email: user.email ?? "", name: user.name ?? "", role: user.role ?? "patient" };
+    return { id: user._id, email: user.email ?? "", name: user.name ?? "", role: user.role ?? "patient", betterAuthId: user.betterAuthId ?? "" };
   },
 });

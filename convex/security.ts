@@ -6,10 +6,19 @@ import { Doc, Id } from "./_generated/dataModel";
 // ============================================================
 
 export async function requireRole(ctx: QueryCtx | MutationCtx, allowedRoles: string[], betterAuthId: string) {
-  const user = await ctx.db
+  let user = await ctx.db
     .query("users")
     .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
     .first();
+
+  if (!user) {
+    // Fallback: Try direct Convex _id lookup (new auth system support)
+    try {
+      user = await ctx.db.get(betterAuthId as Id<"users">);
+    } catch {
+      // Not a valid Convex ID string, ignore
+    }
+  }
 
   if (!user) throw new Error("Unauthorized: User not found");
 
@@ -68,10 +77,19 @@ export async function requirePatientAccess(
 // ============================================================
 
 export async function getUser(ctx: QueryCtx | MutationCtx, betterAuthId: string): Promise<Doc<"users"> | null> {
-  return ctx.db
+  const user = await ctx.db
     .query("users")
     .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
     .first();
+
+  if (user) return user;
+
+  // Fallback: Try direct Convex _id lookup
+  try {
+    return await ctx.db.get(betterAuthId as Id<"users">);
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================

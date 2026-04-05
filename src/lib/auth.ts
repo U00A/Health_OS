@@ -7,6 +7,7 @@ export interface ConvexUser {
   email: string;
   name: string;
   role: string;
+  betterAuthId: string;
 }
 
 const COOKIE_NAME = "health_os_session";
