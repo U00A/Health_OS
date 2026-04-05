@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -19,7 +19,14 @@ interface SidebarItemProps {
 
 export function SidebarItem({ href, icon, label, activeColor }: SidebarItemProps) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const searchParams = useSearchParams();
+  const searchString = searchParams.toString();
+  const currentUrl = `${pathname}${searchString ? `?${searchString}` : ''}`;
+  
+  // If the link has a query parameter, do an exact match on currentUrl. 
+  // Otherwise, match just the pathname and ensure there are no query params if it's an exact base route match without params?
+  // Actually, a simpler way:
+  const isActive = href.includes('?') ? currentUrl === href : pathname === href && !searchString;
   
   // Resolve the icon: if it's a string, look it up in the map; otherwise use it directly
   const Icon = typeof icon === "string" ? iconMap[icon] : icon;

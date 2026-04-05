@@ -19,13 +19,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Card, Button, Chip, Spinner, Skeleton } from "@heroui/react";
-import { Tabs, Tab } from "@/components/ui/ClientTabs";
+
 import { Id } from "../../../convex/_generated/dataModel";
 import { VitalsHistory } from "@/components/patient/VitalsHistory";
 import { VitalStatusDashboard } from "@/components/patient/VitalStatusDashboard";
 import { HealthTimeline } from "@/components/patient/HealthTimeline";
-import { useState } from "react";
-
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 type PatientSection =
   | "dashboard"
   | "lab-results"
@@ -37,7 +37,9 @@ type PatientSection =
   | "appointments"
   | "messages";
 
-export default function PatientPortal() {
+function PatientPortalContent() {
+  const searchParams = useSearchParams();
+  const activeSection = (searchParams?.get("section") as PatientSection) || "dashboard";
   const profile = useQuery(api.patients.getMyProfile, "skip");
 
   // Always call hooks at the top level
@@ -152,42 +154,25 @@ export default function PatientPortal() {
         </div>
       </Card>
 
-      {/* Section Tabs */}
-      <Card className="border border-slate-200 shadow-sm">
-        <div className="px-2 pt-2 pb-0 overflow-x-auto">
-          <Tabs aria-label="Patient sections">
-            <Tab key="dashboard" title={<span className="flex items-center gap-1 text-xs"><Activity size={12} /> Vitals Dashboard</span>}>
-              {renderSection("dashboard", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="timeline" title={<span className="flex items-center gap-1 text-xs"><Clock size={12} /> Health Timeline</span>}>
-              {renderSection("timeline", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="lab-results" title={<span className="flex items-center gap-1 text-xs"><Beaker size={12} /> Lab Results</span>}>
-              {renderSection("lab-results", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="imaging" title={<span className="flex items-center gap-1 text-xs"><DownloadCloud size={12} /> Imaging / Radio</span>}>
-              {renderSection("imaging", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="comptes-rendus" title={<span className="flex items-center gap-1 text-xs"><ClipboardList size={12} /> Comptes Rendus</span>}>
-              {renderSection("comptes-rendus", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="medications" title={<span className="flex items-center gap-1 text-xs"><Pill size={12} /> Medications</span>}>
-              {renderSection("medications", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="doctors" title={<span className="flex items-center gap-1 text-xs"><Users size={12} /> Doctors</span>}>
-              {renderSection("doctors", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="appointments" title={<span className="flex items-center gap-1 text-xs"><Calendar size={12} /> Appointments</span>}>
-              {renderSection("appointments", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-            <Tab key="messages" title={<span className="flex items-center gap-1 text-xs"><MessageSquare size={12} /> Messages</span>}>
-              {renderSection("messages", patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
-            </Tab>
-          </Tabs>
-        </div>
-      </Card>
+      {/* Main Section Content */}
+      <div className="py-2">
+        {renderSection(activeSection, patientId, labResults, imagingFiles, compteRendus, prescriptions, doctors)}
+      </div>
 
     </div>
+  );
+}
+
+export default function PatientPortal() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Spinner size="lg" />
+        <span className="font-bold text-slate-500 uppercase text-xs tracking-widest">Loading secure portal...</span>
+      </div>
+    }>
+      <PatientPortalContent />
+    </Suspense>
   );
 }
 
