@@ -13,13 +13,13 @@ type AdminTab = "console" | "patients" | "admissions" | "billing";
 export default function AdminPage() {
   const betterAuthId = useBetterAuthId();
   const initStatus = useQuery(api.init.checkInit);
-  const users = useQuery(api.adminUsers.listAllUsers);
+  const users = useQuery(api.admin_users.listAllUsers);
   const patients = useQuery(api.patients.listAll, betterAuthId ? { betterAuthId } : "skip");
   const wards = useQuery(api.wards.listAll);
   const beds = useQuery(api.beds.listAll);
   const admissions = useQuery(api.admissions.listAllActive);
   const prescriptions = useQuery(api.prescriptions.listAllActive);
-  const labOrders = useQuery(api.labOrders.listAllPending);
+  const labOrders = useQuery(api.lab_orders.listAllPending);
   const [activeTab, setActiveTab] = useState<AdminTab>("console");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export default function AdminPage() {
     selectedPatientId && betterAuthId ? { patient_id: selectedPatientId as Id<"patients">, betterAuthId } : "skip"
   );
 
-  const seedUsers = useMutation(api.authSeeds.seedDemoUsers);
+  const seedUsers = useMutation(api.auth_seeds.seedDemoUsers);
   const masterInit = useMutation(api.init.masterInit);
   const [seeding, setSeeding] = useState(false);
   const [initMessage, setInitMessage] = useState("");

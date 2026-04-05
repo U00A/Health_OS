@@ -60,7 +60,7 @@ export function LabResultEntryForm({
   onCancel,
   onCriticalAlert,
 }: LabResultEntryFormProps) {
-  const uploadResult = useMutation(api.labResults.uploadResult);
+  const uploadResult = useMutation(api.lab_results.uploadResult);
   const fields = PANEL_FIELDS[analysisType] || DEFAULT_FIELDS;
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);

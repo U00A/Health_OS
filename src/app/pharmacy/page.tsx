@@ -23,8 +23,8 @@ interface ControlledConfirmState {
 export default function PharmacyInterface() {
   const betterAuthId = useBetterAuthId();
   const pendingQueue = useQuery(api.prescriptions.listPending, betterAuthId ? { betterAuthId } : "skip");
-  const dispenseRecords = useQuery(api.dispenseRecords.listByPharmacist, betterAuthId ? { betterAuthId } : "skip");
-  const dispenseMutation = useMutation(api.dispenseRecords.dispense);
+  const dispenseRecords = useQuery(api.dispense_records.listByPharmacist, betterAuthId ? { betterAuthId } : "skip");
+  const dispenseMutation = useMutation(api.dispense_records.dispense);
   const [verified, setVerified] = useState<Record<string, Set<number>>>({});
   const [dispensing, setDispensing] = useState<string | null>(null);
   const [blockedRx, setBlockedRx] = useState<string | null>(null);

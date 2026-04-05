@@ -4,10 +4,10 @@ import { useCallback } from "react";
 import { Activity, ArrowLeft } from "lucide-react";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { DemoCredentials } from "@/components/auth/DemoCredentials";
-import { Button } from "@heroui/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const handleDemoSelect = useCallback((email: string, password: string) => {
     window.dispatchEvent(new CustomEvent("demo-fill", { detail: { email, password } }));
   }, []);
@@ -17,15 +17,13 @@ export default function LoginPage() {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6">
         <div className="flex items-center justify-between">
-          <Link href="/">
-            <Button
-              variant="light"
-              startContent={<ArrowLeft className="w-4 h-4" />}
-              className="font-semibold"
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all duration-200"
+              onClick={() => router.push("/")}
             >
+              <ArrowLeft className="w-4 h-4" />
               Back to Platform
-            </Button>
-          </Link>
+            </button>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
               <Activity className="h-4 w-4 text-white" />

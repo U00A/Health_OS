@@ -10,9 +10,9 @@ import { LabResultEntryForm } from "@/components/clinical/LabResultEntryForm";
 
 export default function LabPage() {
   const betterAuthId = useBetterAuthId();
-  const orders = useQuery(api.labOrders.listPendingOrders, betterAuthId ? { betterAuthId } : "skip");
-  const completedResults = useQuery(api.labResults.listByLab, betterAuthId ? { betterAuthId } : "skip");
-  const updateStatus = useMutation(api.labOrders.updateStatus);
+  const orders = useQuery(api.lab_orders.listPendingOrders, betterAuthId ? { betterAuthId } : "skip");
+  const completedResults = useQuery(api.lab_results.listByLab, betterAuthId ? { betterAuthId } : "skip");
+  const updateStatus = useMutation(api.lab_orders.updateStatus);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [selectedCompletedResult, setSelectedCompletedResult] = useState<string | null>(null);
   const [showCriticalAlert, setShowCriticalAlert] = useState<{ patientName: string; analysisType: string; values: string } | null>(null);

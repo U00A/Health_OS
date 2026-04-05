@@ -49,19 +49,19 @@ function PatientPortalContent() {
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
   const labResults = useQuery(
-    api.labResults.listByPatient,
+    api.lab_results.listByPatient,
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
   const doctors = useQuery(
-    api.doctorPatients.listDoctorsForPatient,
+    api.doctor_patients.listDoctorsForPatient,
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
   const compteRendus = useQuery(
-    api.compteRendus.listByPatient,
+    api.compte_rendus.listByPatient,
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
   const imagingFiles = useQuery(
-    api.imagingFiles.getFilesByPatient,
+    api.imaging_files.getFilesByPatient,
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
 

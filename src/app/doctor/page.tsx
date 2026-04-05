@@ -35,7 +35,7 @@ interface EnrichedPatient {
 export default function DoctorPage() {
   const betterAuthId = useBetterAuthId();
   const rawPatients = useQuery(
-    api.doctorPatients.listMyPatients,
+    api.doctor_patients.listMyPatients,
     betterAuthId ? { betterAuthId } : "skip"
   );
   const patients: EnrichedPatient[] = (rawPatients?.filter(Boolean) as EnrichedPatient[]) || [];
@@ -87,14 +87,14 @@ export default function DoctorPage() {
 
   // Fetch timeline data for selected patient
   const crs = useQuery(
-    api.compteRendus.listByPatient,
+    api.compte_rendus.listByPatient,
     selectedPatient && activeView === "timeline" ? { 
       patient_id: selectedPatient._id as Id<"patients">,
       betterAuthId: betterAuthId || undefined 
     } : "skip"
   );
   const labResults = useQuery(
-    api.labResults.listByPatient,
+    api.lab_results.listByPatient,
     selectedPatient && activeView === "timeline" ? { 
       patient_id: selectedPatient._id as Id<"patients">,
       betterAuthId: betterAuthId || undefined 

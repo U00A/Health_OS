@@ -44,7 +44,7 @@ export function PatientSidebar({ patientId, activeSection, onSectionChange }: Pa
   const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
 
   const compteRendusForSpecialities = useQuery(
-    api.compteRendus.listByPatient,
+    api.compte_rendus.listByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
 
@@ -62,19 +62,19 @@ export function PatientSidebar({ patientId, activeSection, onSectionChange }: Pa
   // Use the speciality_id values directly as the list
   const specialities = Array.from(specialityIdSet).map((id) => ({ _id: id }));
   const doctors = useQuery(
-    api.doctorPatients.listDoctorsForPatient,
+    api.doctor_patients.listDoctorsForPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const labResults = useQuery(
-    api.labResults.listByPatient,
+    api.lab_results.listByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const imagingFiles = useQuery(
-    api.imagingFiles.getFilesByPatient,
+    api.imaging_files.getFilesByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const compteRendus = useQuery(
-    api.compteRendus.listByPatient,
+    api.compte_rendus.listByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const prescriptions = useQuery(

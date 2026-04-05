@@ -15,7 +15,7 @@ export function CompteRendu({ patientId }: { patientId: Id<"patients"> }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editorHtml, setEditorHtml] = useState("");
 
-  const createRecord = useMutation(api.compteRendus.create);
+  const createRecord = useMutation(api.compte_rendus.create);
 
   const handleSave = async () => {
     if (!betterAuthId) return;

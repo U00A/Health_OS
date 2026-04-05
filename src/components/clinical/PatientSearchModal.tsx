@@ -27,7 +27,7 @@ export function PatientSearchModal({
     api.patients.searchByNationalId,
     query.length >= 3 ? { national_id: query } : "skip"
   );
-  const selfAssign = useMutation(api.doctorPatients.selfAssignPatient);
+  const selfAssign = useMutation(api.doctor_patients.selfAssignPatient);
 
   if (!isOpen) return null;
 

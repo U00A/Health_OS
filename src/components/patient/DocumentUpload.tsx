@@ -44,12 +44,12 @@ export function DocumentUpload({ patientId }: DocumentUploadProps) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const generateUploadUrl = useMutation(api.patientDocuments.generateUploadUrl);
-  const uploadDocument = useMutation(api.patientDocuments.uploadDocument);
-  const extractDocumentData = useMutation(api.patientDocuments.extractDocumentData);
-  const deleteDocument = useMutation(api.patientDocuments.deleteDocument);
-  const documents = useQuery(api.patientDocuments.listByPatient, { patient_id: patientId });
-  const stats = useQuery(api.patientDocuments.getDocumentStats, { patient_id: patientId });
+  const generateUploadUrl = useMutation(api.patient_documents.generateUploadUrl);
+  const uploadDocument = useMutation(api.patient_documents.uploadDocument);
+  const extractDocumentData = useMutation(api.patient_documents.extractDocumentData);
+  const deleteDocument = useMutation(api.patient_documents.deleteDocument);
+  const documents = useQuery(api.patient_documents.listByPatient, { patient_id: patientId });
+  const stats = useQuery(api.patient_documents.getDocumentStats, { patient_id: patientId });
 
   const handleFileSelect = (file: File) => {
     if (file.size > 10 * 1024 * 1024) {

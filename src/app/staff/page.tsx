@@ -19,7 +19,7 @@ export default function StaffDashboard() {
   const wards = useQuery(api.wards.listByHospital, user?.hospital_id ? { hospital_id: user.hospital_id } : "skip");
   const firstWardId = wards && wards.length > 0 ? wards[0]._id : undefined;
   const beds = useQuery(api.beds.getWardBeds, firstWardId ? { ward_id: firstWardId } : "skip");
-  const logs = useQuery(api.caseEntries.getWardLog, firstWardId && betterAuthId ? { betterAuthId, ward_id: firstWardId } : "skip");
+  const logs = useQuery(api.case_entries.getWardLog, firstWardId && betterAuthId ? { betterAuthId, ward_id: firstWardId } : "skip");
   const admissions = useQuery(api.admissions.listActiveByWard, firstWardId ? { ward_id: firstWardId } : "skip");
 
   // Get active prescriptions for all admitted patients
@@ -36,7 +36,7 @@ export default function StaffDashboard() {
   );
 
   const admitMutation = useMutation(api.admissions.admit);
-  const createEntry = useMutation(api.caseEntries.createEntry);
+  const createEntry = useMutation(api.case_entries.createEntry);
 
   const [activeView, setActiveView] = useState<StaffView>("main");
   const [showSearch, setShowSearch] = useState(false);

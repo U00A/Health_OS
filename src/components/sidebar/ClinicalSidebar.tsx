@@ -5,7 +5,7 @@ import { User } from "lucide-react";
 import { Id, Doc } from "../../../convex/_generated/dataModel";
 
 export function ClinicalSidebar({ currentUserId }: { currentUserId: Id<"users"> }) {
-  const assignedPatients = useQuery(api.doctorPatients.listPatientsForDoctor, { 
+  const assignedPatients = useQuery(api.doctor_patients.listPatientsForDoctor, { 
     doctor_id: currentUserId 
   });
 

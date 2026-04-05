@@ -15,7 +15,7 @@ interface CompteRenduFormProps {
 }
 
 export function CompteRenduForm({ patient, betterAuthId, onSuccess, onCancel }: CompteRenduFormProps) {
-  const createCR = useMutation(api.compteRendus.create);
+  const createCR = useMutation(api.compte_rendus.create);
   const [diagnosisCode, setDiagnosisCode] = useState("");
   const [symptoms, setSymptoms] = useState("");
   const [treatmentPlan, setTreatmentPlan] = useState("");

@@ -33,7 +33,7 @@ const ANALYSIS_TYPES = [
 ];
 
 export function LabOrderForm({ patient, betterAuthId, onSuccess, onCancel }: LabOrderFormProps) {
-  const createOrder = useMutation(api.labOrders.createOrder);
+  const createOrder = useMutation(api.lab_orders.createOrder);
   const [analysisType, setAnalysisType] = useState(ANALYSIS_TYPES[0]);
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [clinicalNotes, setClinicalNotes] = useState("");

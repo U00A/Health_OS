@@ -31,11 +31,11 @@ type TimelineEvent = {
 
 export function HealthTimeline({ patientId }: HealthTimelineProps) {
   const compteRendus = useQuery(
-    api.compteRendus.listByPatient,
+    api.compte_rendus.listByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const labResults = useQuery(
-    api.labResults.listByPatient,
+    api.lab_results.listByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
   const prescriptions = useQuery(
@@ -47,7 +47,7 @@ export function HealthTimeline({ patientId }: HealthTimelineProps) {
     patientId ? { patient_id: patientId } : "skip"
   );
   const imagingFiles = useQuery(
-    api.imagingFiles.getFilesByPatient,
+    api.imaging_files.getFilesByPatient,
     patientId ? { patient_id: patientId } : "skip"
   );
 
