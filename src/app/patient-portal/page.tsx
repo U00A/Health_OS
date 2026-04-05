@@ -25,8 +25,8 @@ import { useBetterAuthId } from "@/hooks/useBetterAuthId";
 import { VitalStatusDashboard } from "@/components/patient/VitalStatusDashboard";
 import { HealthTimeline } from "@/components/patient/HealthTimeline";
 import { VitalsTrendChart } from "@/components/clinical/VitalsTrendChart";
-import { Suspense } from "react";
-import { useSearchParams, ReadonlyURLSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useSearchParams, ReadonlyURLSearchParams, useRouter } from "next/navigation";
 type PatientSection =
   | "dashboard"
   | "speciality"
@@ -41,6 +41,7 @@ type PatientSection =
 
 function PatientPortalContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const activeSection = (searchParams?.get("section") as PatientSection) || "dashboard";
   const betterAuthId = useBetterAuthId();
   const profile = useQuery(api.patients.getMyProfile, betterAuthId ? { betterAuthId } : "skip");
@@ -67,6 +68,13 @@ function PatientPortalContent() {
     profile ? { patient_id: profile._id as Id<"patients"> } : "skip"
   );
 
+  // Redirect to signup if no profile
+  useEffect(() => {
+    if (profile === null) {
+      router.push("/patient-signup");
+    }
+  }, [profile, router]);
+
   // Early return for loading state
   if (profile === undefined) {
     return (
@@ -79,11 +87,7 @@ function PatientPortalContent() {
     );
   }
 
-  // Redirect to signup if no profile
   if (profile === null) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/patient-signup";
-    }
     return (
       <div className="flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4 text-blue-600">
