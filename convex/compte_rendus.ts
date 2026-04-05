@@ -1,8 +1,38 @@
-// v1.0.3 - Fully inlined masking to avoid dynamic module import issues
+// v1.0.4 - Fully self-contained, no cross-module imports that could cause dynamic import issues
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole, getUser } from "./security";
-import { Doc, Id } from "./_generated/dataModel";
+import { Id } from "./_generated/dataModel";
+
+// Helper: get user by betterAuthId (inlined to avoid cross-module issues)
+async function getUserInline(ctx: any, betterAuthId: string) {
+  if (!betterAuthId || betterAuthId === "undefined" || betterAuthId === "null") {
+    return null;
+  }
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_better_auth_id", (q: any) => q.eq("betterAuthId", betterAuthId))
+    .first();
+  if (user) return user;
+  try {
+    return await ctx.db.get(betterAuthId);
+  } catch {
+    return null;
+  }
+}
+
+// Helper: require role (inlined to avoid cross-module issues)
+async function requireRoleInline(ctx: any, allowedRoles: string[], betterAuthId: string) {
+  if (!betterAuthId || betterAuthId === "undefined" || betterAuthId === "null") {
+    throw new Error("Unauthorized: Identity token is missing");
+  }
+  const user = await getUserInline(ctx, betterAuthId);
+  if (!user) throw new Error("Unauthorized: User not found");
+  const userRole = user.role || "patient";
+  if (!allowedRoles.includes(userRole) && userRole !== "admin") {
+    throw new Error("Forbidden: Insufficient privileges");
+  }
+  return { ...user, role: userRole };
+}
 
 // Immutable insert (no update or delete)
 export const create = mutation({
@@ -16,7 +46,7 @@ export const create = mutation({
     content_html: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["medecin_etat", "private_doctor"], args.betterAuthId);
+    const user = await requireRoleInline(ctx, ["medecin_etat", "private_doctor"], args.betterAuthId);
 
     const compteRenduId = await ctx.db.insert("compte_rendus", {
       patient_id: args.patient_id,
@@ -40,22 +70,22 @@ export const listByPatient = query({
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = args.betterAuthId ? await getUser(ctx, args.betterAuthId) : null;
+    const user = args.betterAuthId ? await getUserInline(ctx, args.betterAuthId) : null;
     
     let baseQuery = ctx.db
       .query("compte_rendus")
-      .withIndex("by_patient", (q) => q.eq("patient_id", args.patient_id));
+      .withIndex("by_patient", (q: any) => q.eq("patient_id", args.patient_id));
 
     if (user && user.role === "private_doctor") {
       const isPresent = args.sessionToken 
         ? (await ctx.db
             .query("biometric_sessions")
-            .withIndex("by_token", (q) => q.eq("session_token", args.sessionToken!))
+            .withIndex("by_token", (q: any) => q.eq("session_token", args.sessionToken!))
             .first())?.is_valid 
         : false;
       
       if (!isPresent) {
-        baseQuery = baseQuery.filter((q) => q.eq(q.field("doctor_id"), user._id));
+        baseQuery = baseQuery.filter((q: any) => q.eq(q.field("doctor_id"), user._id));
       }
     }
 
@@ -71,46 +101,40 @@ export const listByPatient = query({
   },
 });
 
-// Inlined masking function to avoid dynamic module import issues
-async function maskDocumentDoctorInline<T extends { doctor_id?: Id<"users"> }>(
-  ctx: QueryCtx,
-  callerBetterAuthId: string | null,
-  doc: T
-): Promise<T & { doctorName?: string; doctorClinic?: string; doctorContact?: string }> {
-  if (!doc.doctor_id) return { ...doc } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+// Inlined masking function - no external dependencies
+async function maskDocumentDoctorInline(ctx: any, callerBetterAuthId: string | null, doc: any) {
+  if (!doc.doctor_id) return { ...doc };
 
-  const caller = callerBetterAuthId ? await getUser(ctx, callerBetterAuthId) : null;
+  const caller = callerBetterAuthId ? await getUserInline(ctx, callerBetterAuthId) : null;
   const callerRole = caller?.role || "patient";
 
   // State doctors see full identity
   if (callerRole === "medecin_etat") {
     const doctor = await ctx.db.get(doc.doctor_id);
-    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
-    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" };
+    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details };
   }
 
   // Patients see full identity
   if (callerRole === "patient") {
     const doctor = await ctx.db.get(doc.doctor_id);
-    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
-    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    if (!doctor) return { ...doc, doctorName: "Unknown Doctor" };
+    return { ...doc, doctorName: doctor.name || "Unknown Doctor", doctorClinic: doctor.clinic_name, doctorContact: doctor.contact_details };
   }
 
   // Private doctors viewing another private doctor's work -> MASKED
   if (callerRole === "private_doctor") {
     const targetDoctor = await ctx.db.get(doc.doctor_id);
-    if (!targetDoctor) return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    if (!targetDoctor) return { ...doc, doctorName: "Treating Physician" };
 
     // If it's the same doctor, show full identity
     if (caller && targetDoctor._id === caller._id) {
-      return { ...doc, doctorName: targetDoctor.name || "Unknown Doctor", doctorClinic: targetDoctor.clinic_name, doctorContact: targetDoctor.contact_details } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+      return { ...doc, doctorName: targetDoctor.name || "Unknown Doctor", doctorClinic: targetDoctor.clinic_name, doctorContact: targetDoctor.contact_details };
     }
     // Different private doctor -> MASK
-    return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+    return { ...doc, doctorName: "Treating Physician" };
   }
 
   // Default: masked
-  return { ...doc, doctorName: "Treating Physician" } as T & { doctorName?: string; doctorClinic?: string; doctorContact?: string };
+  return { ...doc, doctorName: "Treating Physician" };
 }
-
-type QueryCtx = Parameters<typeof getUser>[0];
