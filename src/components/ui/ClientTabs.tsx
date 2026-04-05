@@ -4,7 +4,7 @@ import React, { useState, ReactElement, ReactNode } from "react";
 
 interface TabProps {
   children: ReactNode;
-  title: string;
+  title: ReactNode;
   key?: string;
 }
 
