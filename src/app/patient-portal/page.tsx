@@ -424,7 +424,7 @@ function renderSection(
                           {cr.diagnosis_code || "Clinical Consultation"}
                         </div>
                         {cr.doctorName && (
-                          <Chip size="sm" variant="flat" color="primary" className="text-[10px] font-bold">
+                          <Chip size="sm" variant="soft" color="default" className="text-[10px] font-bold">
                             Dr. {cr.doctorName}
                           </Chip>
                         )}
