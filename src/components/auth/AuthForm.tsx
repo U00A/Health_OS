@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { Tabs, Tab, Card, Button } from "@heroui/react";
+import { Card } from "@heroui/react";
 
 const roles = [
   { label: "Patient", value: "patient" },
@@ -113,24 +113,39 @@ function AuthFormContent() {
 
   return (
     <div className="w-full">
-      <Tabs
-        selectedKey={selectedTab}
-        onSelectionChange={(key) => setSelectedTab(key as string)}
-        className="w-full"
-      >
-        <Tab key="signin">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Sign In
-          </div>
-        </Tab>
-        <Tab key="signup">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            Sign Up
-          </div>
-        </Tab>
-      </Tabs>
+      <div className="grid w-full grid-cols-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setSelectedTab("signin")}
+          className={`flex items-center justify-center gap-2 py-3 text-sm font-medium border-b-2 transition-all ${
+            selectedTab === "signin"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          Sign In
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectedTab("signup")}
+          className={`flex items-center justify-center gap-2 py-3 text-sm font-medium border-b-2 transition-all ${
+            selectedTab === "signup"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          Sign Up
+        </button>
+      </div>
+      <div
+        className="w-full h-0.5 -mt-px bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-200"
+        style={{
+          transform: selectedTab === "signin" ? "translateX(0)" : "translateX(100%)",
+          width: "50%",
+        }}
+      />
 
       {selectedTab === "signin" && (
         <Card className="p-6 space-y-6 mt-4">
