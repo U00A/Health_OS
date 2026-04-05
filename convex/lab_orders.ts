@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser } from "./security";
 
 export const createOrder = mutation({
   args: {
@@ -30,7 +30,9 @@ export const createOrder = mutation({
 export const listPendingOrders = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["laboratory"], args.betterAuthId);
+    const user = await getUser(ctx, args.betterAuthId);
+    if (!user) return [];
+    if (user.role !== "laboratory" && user.role !== "admin") return [];
     // Lab sees all pending/in-progress orders (optionally filtered to their lab_id)
     const orders = await ctx.db
       .query("lab_orders")

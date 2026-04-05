@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireRole } from "./security";
+import { requireRole, getUser } from "./security";
 
 export const dispense = mutation({
   args: {
@@ -92,7 +92,9 @@ export const listDispenseRecords = query({
 export const listByPharmacist = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["pharmacy"], args.betterAuthId);
+    const user = await getUser(ctx, args.betterAuthId);
+    if (!user) return [];
+    if (user.role !== "pharmacy" && user.role !== "admin") return [];
     const records = await ctx.db
       .query("dispense_records")
       .withIndex("by_pharmacist", (q) => q.eq("pharmacist_id", user._id))

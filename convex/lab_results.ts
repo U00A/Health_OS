@@ -146,7 +146,9 @@ export const listByOrder = query({
 export const listByLab = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["laboratory"], args.betterAuthId);
+    const user = await getUser(ctx, args.betterAuthId);
+    if (!user) return [];
+    if (user.role !== "laboratory" && user.role !== "admin") return [];
     const results = await ctx.db
       .query("lab_results")
       .order("desc")

@@ -117,7 +117,9 @@ export const listByDoctor = query({
 export const listPending = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    await requireRole(ctx, ["pharmacy"], args.betterAuthId);
+    const user = await getUser(ctx, args.betterAuthId);
+    if (!user) return [];
+    if (user.role !== "pharmacy" && user.role !== "admin") return [];
     const active = await ctx.db
       .query("prescriptions")
       .withIndex("by_status", (q) => q.eq("status", "active"))

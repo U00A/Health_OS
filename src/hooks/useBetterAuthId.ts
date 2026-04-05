@@ -10,7 +10,8 @@ export function useBetterAuthId(): string | undefined {
       try {
         const res = await fetch("/api/auth/session");
         const data = await res.json();
-        setBetterAuthId(data.user?.id);
+        // Prefer deterministic betterAuthId for Convex query compatibility
+        setBetterAuthId(data.user?.betterAuthId || data.user?.id);
       } catch {
         setBetterAuthId(undefined);
       }

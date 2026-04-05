@@ -6,6 +6,10 @@ import { Doc, Id } from "./_generated/dataModel";
 // ============================================================
 
 export async function requireRole(ctx: QueryCtx | MutationCtx, allowedRoles: string[], betterAuthId: string) {
+  if (!betterAuthId || betterAuthId === "undefined" || betterAuthId === "null") {
+    throw new Error("Unauthorized: Identity token is missing");
+  }
+
   let user = await ctx.db
     .query("users")
     .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
@@ -77,6 +81,10 @@ export async function requirePatientAccess(
 // ============================================================
 
 export async function getUser(ctx: QueryCtx | MutationCtx, betterAuthId: string): Promise<Doc<"users"> | null> {
+  if (!betterAuthId || betterAuthId === "undefined" || betterAuthId === "null") {
+    return null;
+  }
+
   const user = await ctx.db
     .query("users")
     .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
