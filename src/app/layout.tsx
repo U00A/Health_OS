@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 // Optimize font loading - only load required subsets and use font-display swap
 const inter = Inter({
@@ -39,6 +40,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col antialiased" style={{ fontFamily: "var(--font-inter), system-ui, sans-serif" }}>
         <ConvexClientProvider>{children}</ConvexClientProvider>
+        <Analytics />
       </body>
     </html>
   );
