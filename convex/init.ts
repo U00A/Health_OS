@@ -350,6 +350,15 @@ export const masterReset = mutation({
       "patients",
       "users",
       "hospitals",
+      "patient_documents",
+      "notifications",
+      "signal_flags",
+      "billing_records",
+      "consultation_templates",
+      "biometric_sessions",
+      "supply_requests",
+      "shift_handovers",
+      "referrals",
     ] as const;
 
     let totalDeleted = 0;
@@ -365,7 +374,7 @@ export const masterReset = mutation({
       }
     }
 
-    return { deleted: totalDeleted, message: "All data cleared." };
+    return { deleted: totalDeleted, message: "All data cleared inclusive of v2.0 tables." };
   },
 });
 

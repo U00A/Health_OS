@@ -116,6 +116,20 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
 
       setSuccess(isSignUpMode ? "Account created! Redirecting..." : "Success! Redirecting...");
       
+      // Determine the redirect target based on role
+      const getRedirectPath = (userRole: string) => {
+        switch (userRole) {
+          case "admin": return "/admin";
+          case "medecin_etat": return "/doctor";
+          case "private_doctor": return "/private";
+          case "medical_staff": return "/staff";
+          case "pharmacy": return "/pharmacy";
+          case "laboratory": return "/lab";
+          case "patient":
+          default: return "/patient-portal";
+        }
+      };
+
       if (isSignUpMode && role === "patient" && betterAuthId) {
         // For patient signup, emit event and let the parent handle navigation
         window.dispatchEvent(new CustomEvent("auth-success", { 
@@ -127,7 +141,10 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
         }
       }
       
-      setTimeout(() => router.push("/"), 1500);
+      // For sign-in, redirect based on the user's role from the session
+      // For sign-up, redirect based on the selected role
+      const redirectPath = isSignUpMode ? getRedirectPath(role) : "/";
+      setTimeout(() => router.push(redirectPath), 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Authentication failed.";
       console.error("Auth error:", err);
