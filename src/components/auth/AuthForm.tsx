@@ -3,8 +3,6 @@
 import { useState, Suspense, useCallback, useEffect } from "react";
 import { Mail, Lock, User, AlertCircle, CheckCircle2, ShieldCheck, Activity } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { Card } from "@heroui/react";
 
 const roles = [
@@ -24,7 +22,6 @@ interface AuthFormContentProps {
 function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const syncUser = useMutation(api.auth_sync.syncUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("patient");
@@ -80,15 +77,7 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
         return;
       }
 
-      // Sync user with Convex
-      if (data.user) {
-        await syncUser({
-          betterAuthId: data.user.id,
-          email: data.user.email,
-          name: data.user.name,
-          role: data.user.role,
-        });
-      }
+      // User is already stored in Convex via API route
 
       setSuccess(isSignUpMode ? "Account created! Redirecting..." : "Success! Redirecting...");
       

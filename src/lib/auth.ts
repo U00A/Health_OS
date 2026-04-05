@@ -1,86 +1,24 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-export interface User {
+import { cookies } from "next/headers";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
+
+export interface ConvexUser {
   id: string;
   email: string;
   name: string;
   role: string;
 }
 
-interface StoredUser extends User {
-  passwordHash: string;
-}
-
 const COOKIE_NAME = "health_os_session";
 
-// Simple password hashing (for dev only)
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + "dev-salt-123");
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function comparePasswords(plain: string, hashed: string): Promise<boolean> {
-  return hashed === await hashPassword(plain);
-}
-
-// Default dev users for initial setup
-const DEFAULT_USERS: Omit<StoredUser, "passwordHash">[] = [
-  {
-    id: "admin_001",
-    email: "admin@test.com",
-    name: "Admin User",
-    role: "admin",
-  },
-  {
-    id: "doctor_001", 
-    email: "doctor@test.com",
-    name: "Test Doctor",
-    role: "medecin_etat",
-  },
-  {
-    id: "patient_001",
-    email: "patient@test.com", 
-    name: "Test Patient",
-    role: "patient",
-  }
-];
-
-async function readUsers(): Promise<StoredUser[]> {
-  const { default: fs } = await import("fs/promises");
-  const { default: path } = await import("path");
-  const filePath = path.join(process.cwd(), "dev_users.json");
-  try {
-    const data = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
-async function writeUsers(users: StoredUser[]): Promise<void> {
-  const { default: fs } = await import("fs/promises");
-  const { default: path } = await import("path");
-  const filePath = path.join(process.cwd(), "dev_users.json");
-  await fs.writeFile(filePath, JSON.stringify(users, null, 2));
-}
-
-async function initDefaultUsers(): Promise<void> {
-  const users = await readUsers();
-  if (users.length === 0) {
-    const defaultWithPasswords: StoredUser[] = [];
-    for (const u of DEFAULT_USERS) {
-      const pwd = u.email === "admin@test.com" ? "admin123" : 
-                  u.email === "doctor@test.com" ? "doctor123" : "patient123";
-      defaultWithPasswords.push({ ...u, passwordHash: await hashPassword(pwd) });
-    }
-    await writeUsers(defaultWithPasswords);
-  }
+// Get Convex client for server-side auth
+function getConvexClient(): ConvexHttpClient {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL || "https://dusty-dinosaur-1.eu-west-1.convex.cloud";
+  return new ConvexHttpClient(url);
 }
 
 // Cookie functions (server-side only)
-export async function setAuthCookie(user: User): Promise<void> {
-  const { cookies } = await import("next/headers");
+export async function setAuthCookie(user: ConvexUser): Promise<void> {
   const cookieStore = await cookies();
   const encoded = Buffer.from(JSON.stringify(user)).toString("base64");
   cookieStore.set(COOKIE_NAME, encoded, {
@@ -92,9 +30,8 @@ export async function setAuthCookie(user: User): Promise<void> {
   });
 }
 
-export async function getAuthUser(): Promise<User | null> {
+export async function getAuthUser(): Promise<ConvexUser | null> {
   try {
-    const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const session = cookieStore.get(COOKIE_NAME);
     if (!session?.value) return null;
@@ -105,49 +42,39 @@ export async function getAuthUser(): Promise<User | null> {
 }
 
 export async function clearAuthCookie(): Promise<void> {
-  const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function handleLogin(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
-  await initDefaultUsers();
-  const users = await readUsers();
-
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) {
-    return { user: null, error: "User not found" };
+export async function handleLogin(email: string, password: string): Promise<{ user: ConvexUser | null; error: string | null }> {
+  try {
+    const convex = getConvexClient();
+    const user = await convex.mutation(api.auth.login, { email, password });
+    await setAuthCookie(user);
+    return { user, error: null };
+  } catch (err: any) {
+    return { user: null, error: err.message || "Login failed" };
   }
-  
-  if (!await comparePasswords(password, user.passwordHash)) {
-    return { user: null, error: "Invalid password" };
-  }
-  
-  const { passwordHash: _, ...safeUser } = user;
-  return { user: safeUser, error: null };
 }
 
-export async function handleSignup(email: string, password: string, name: string, role: string): Promise<{ user: User | null; error: string | null }> {
-  await initDefaultUsers();
-  const users = await readUsers();
-  
-  if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-    return { user: null, error: "Email already exists" };
+export async function handleSignup(email: string, password: string, name: string, role: string): Promise<{ user: ConvexUser | null; error: string | null }> {
+  try {
+    const convex = getConvexClient();
+    await convex.mutation(api.auth.register, { email, password, name, role: role || "patient" });
+    // Login after signup
+    return handleLogin(email, password);
+  } catch (err: any) {
+    return { user: null, error: err.message || "Signup failed" };
   }
-  
-  const newUser: StoredUser = {
-    id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-    email,
-    name,
-    role,
-    passwordHash: await hashPassword(password),
-  };
-  
-  users.push(newUser);
-  await writeUsers(users);
-  
-  const { passwordHash: _, ...safeUser } = newUser;
-  return { user: safeUser, error: null };
+}
+
+export async function getUserByEmail(email: string): Promise<ConvexUser | null> {
+  try {
+    const convex = getConvexClient();
+    return await convex.query(api.auth.getUserByEmail, { email });
+  } catch {
+    return null;
+  }
 }
 
 export function getRoleRedirect(role: string): string {

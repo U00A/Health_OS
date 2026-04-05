@@ -38,19 +38,15 @@ export default function AdminPage() {
     selectedPatientId && betterAuthId ? { patient_id: selectedPatientId as Id<"patients">, betterAuthId } : "skip"
   );
 
-  const seedUsers = useMutation(api.auth_seeds.seedDemoUsers);
+  // Auth seeds removed - now using Convex-based signup
+  const seedUsers = () => {};
   const masterInit = useMutation(api.init.masterInit);
   const [seeding, setSeeding] = useState(false);
   const [initMessage, setInitMessage] = useState("");
 
   const handleSeedUsers = async () => {
     setSeeding(true);
-    try {
-      const result = await seedUsers();
-      setInitMessage(result.message);
-    } catch (e: unknown) {
-      setInitMessage((e as Error).message);
-    }
+    setInitMessage("Seed demo functionality - create users via signup instead");
     setSeeding(false);
   };
 
@@ -453,7 +449,7 @@ export default function AdminPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Ward</span>
-                        <span className="font-bold text-slate-900">{(a as any).wardName || "N/A"}</span>
+                        <span className="font-bold text-slate-900">{"wardName" in a ? String((a as Record<string, unknown>).wardName) || "N/A" : "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Bed</span>

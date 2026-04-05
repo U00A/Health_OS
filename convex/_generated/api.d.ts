@@ -10,8 +10,7 @@
 
 import type * as admin_users from "../admin_users.js";
 import type * as admissions from "../admissions.js";
-import type * as auth_seeds from "../auth_seeds.js";
-import type * as auth_sync from "../auth_sync.js";
+import type * as auth from "../auth.js";
 import type * as beds from "../beds.js";
 import type * as billing from "../billing.js";
 import type * as case_entries from "../case_entries.js";
@@ -47,8 +46,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin_users: typeof admin_users;
   admissions: typeof admissions;
-  auth_seeds: typeof auth_seeds;
-  auth_sync: typeof auth_sync;
+  auth: typeof auth;
   beds: typeof beds;
   billing: typeof billing;
   case_entries: typeof case_entries;

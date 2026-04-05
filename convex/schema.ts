@@ -8,6 +8,7 @@ export default defineSchema({
     image: v.optional(v.string()),
     phone: v.optional(v.string()),
     betterAuthId: v.optional(v.string()),
+    passwordHash: v.optional(v.string()),
     hospital_id: v.optional(v.id("hospitals")),
     speciality_id: v.optional(v.id("specialities")),
     ward_id: v.optional(v.id("wards")),
