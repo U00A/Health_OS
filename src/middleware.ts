@@ -11,26 +11,25 @@ const protectedPrefixes = [
   "/patient-portal",
 ];
 
+const COOKIE_NAME = "health_os_session";
+
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Better Auth stores session in this cookie. 
-  // In production it might be __Secure-better-auth.session_token
-  const sessionToken = 
-    request.cookies.get("better-auth.session_token")?.value ||
-    request.cookies.get("__Secure-better-auth.session_token")?.value;
+  // Check for our session cookie
+  const sessionCookie = request.cookies.get(COOKIE_NAME)?.value;
 
-  const isSignIn = signInPages.some((p) => pathname === p || pathname.startsWith(p + "/"));
-  const isProtected = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p));
+  const isSignInPage = pathname === "/login";
+  const isProtected = protectedPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Redirect unauthenticated users away from protected routes
-  if (isProtected && !sessionToken) {
+  if (isProtected && !sessionCookie) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users away from sign-in pages
-  if (isSignIn && sessionToken) {
+  if (isSignInPage && sessionCookie) {
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
@@ -39,5 +38,5 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)","/" , "/(api|trpc)(.*)"],
+  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
 };

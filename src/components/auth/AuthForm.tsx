@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, Suspense, useEffect, useCallback } from "react";
+import { useState, Suspense, useCallback, useEffect } from "react";
 import { Mail, Lock, User, AlertCircle, CheckCircle2, ShieldCheck, Activity } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Card } from "@heroui/react";
@@ -34,7 +33,6 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState(searchParams.get("flow") === "signUp" ? "signup" : "signin");
 
-  // Listen for demo-fill events
   const handleDemoFill = useCallback((e: Event) => {
     const detail = (e as CustomEvent).detail as { email: string; password: string };
     setEmail(detail.email);
@@ -63,88 +61,46 @@ function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
     setIsLoading(true);
 
     try {
-      let authResult: { data: unknown; error: { message: string } | null } | null = null;
-      let betterAuthId: string | undefined;
+      const endpoint = isSignUpMode ? "/api/auth/signup" : "/api/auth/login";
+      const body = isSignUpMode 
+        ? { email, password, name: email.split("@")[0], role }
+        : { email, password };
 
-      if (isSignUpMode) {
-        const result = await authClient.signUp.email({
-          email,
-          password,
-          name: email.split("@")[0],
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || (isSignUpMode ? "Registration failed" : "Authentication failed"));
+        setIsLoading(false);
+        return;
+      }
+
+      // Sync user with Convex
+      if (data.user) {
+        await syncUser({
+          betterAuthId: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
         });
-
-        if (result.error) {
-          setError(result.error.message || "Registration failed.");
-          setIsLoading(false);
-          return;
-        }
-
-        authResult = result;
-        betterAuthId = result.data?.user?.id;
-
-        if (result.data?.user) {
-          await syncUser({
-            betterAuthId: result.data.user.id,
-            email,
-            name: result.data.user.name,
-            role,
-          });
-        }
-      } else {
-        const result = await authClient.signIn.email({
-          email,
-          password,
-        });
-
-        if (result.error) {
-          setError(result.error.message || "Authentication failed.");
-          setIsLoading(false);
-          return;
-        }
-
-        authResult = result;
-        betterAuthId = result.data?.user?.id;
-
-        if (result.data?.user) {
-          await syncUser({
-            betterAuthId: result.data.user.id,
-            email,
-            name: result.data.user.name,
-          });
-        }
       }
 
       setSuccess(isSignUpMode ? "Account created! Redirecting..." : "Success! Redirecting...");
       
-      // Determine the redirect target based on role
-      const getRedirectPath = (userRole: string) => {
-        switch (userRole) {
-          case "admin": return "/admin";
-          case "medecin_etat": return "/doctor";
-          case "private_doctor": return "/private";
-          case "medical_staff": return "/staff";
-          case "pharmacy": return "/pharmacy";
-          case "laboratory": return "/lab";
-          case "patient":
-          default: return "/patient-portal";
-        }
-      };
-
-      if (isSignUpMode && role === "patient" && betterAuthId) {
-        // For patient signup, emit event and let the parent handle navigation
+      if (isSignUpMode && role === "patient" && onSignupSuccess) {
         window.dispatchEvent(new CustomEvent("auth-success", { 
-          detail: { betterAuthId, email } 
+          detail: { betterAuthId: data.user.id, email } 
         }));
-        if (onSignupSuccess) {
-          onSignupSuccess();
-          return;
-        }
+        onSignupSuccess();
+        return;
       }
       
-      // For sign-in, redirect based on the user's role from the session
-      // For sign-up, redirect based on the selected role
-      const redirectPath = isSignUpMode ? getRedirectPath(role) : "/";
-      setTimeout(() => router.push(redirectPath), 1500);
+      setTimeout(() => router.push(data.redirect || "/"), 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Authentication failed.";
       console.error("Auth error:", err);
