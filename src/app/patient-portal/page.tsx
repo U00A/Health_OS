@@ -77,7 +77,7 @@ function PatientPortalContent() {
     );
   }
 
-  // Early return for no profile
+  // Redirect to signup if no profile
   if (profile === null) {
     return (
       <div className="max-w-lg mx-auto">
@@ -87,13 +87,19 @@ function PatientPortalContent() {
               <Shield size={36} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Account Setup Needed</h2>
-              <p className="text-slate-500 font-medium mt-2">Your profile has not been linked to any medical records yet.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Complete Your Registration</h2>
+              <p className="text-slate-500 font-medium mt-2">Your account has been created but your patient profile is not set up yet.</p>
             </div>
-            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl">
+            <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-4">
               <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                Please contact the hospital administrator to complete your registration.
+                Please complete your patient profile to access your health dashboard.
               </p>
+              <button
+                onClick={() => window.location.href = "/patient-signup"}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all"
+              >
+                Complete Registration
+              </button>
             </div>
           </div>
         </Card>

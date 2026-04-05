@@ -18,7 +18,11 @@ const roles = [
   { label: "Administrator", value: "admin" },
 ];
 
-function AuthFormContent() {
+interface AuthFormContentProps {
+  onSignupSuccess?: () => void;
+}
+
+function AuthFormContent({ onSignupSuccess }: AuthFormContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const syncUser = useMutation(api.auth_sync.syncUser);
@@ -59,6 +63,9 @@ function AuthFormContent() {
     setIsLoading(true);
 
     try {
+      let authResult: { data: unknown; error: { message: string } | null } | null = null;
+      let betterAuthId: string | undefined;
+
       if (isSignUpMode) {
         const result = await authClient.signUp.email({
           email,
@@ -71,6 +78,9 @@ function AuthFormContent() {
           setIsLoading(false);
           return;
         }
+
+        authResult = result;
+        betterAuthId = result.data?.user?.id;
 
         if (result.data?.user) {
           await syncUser({
@@ -92,6 +102,9 @@ function AuthFormContent() {
           return;
         }
 
+        authResult = result;
+        betterAuthId = result.data?.user?.id;
+
         if (result.data?.user) {
           await syncUser({
             betterAuthId: result.data.user.id,
@@ -102,6 +115,18 @@ function AuthFormContent() {
       }
 
       setSuccess(isSignUpMode ? "Account created! Redirecting..." : "Success! Redirecting...");
+      
+      if (isSignUpMode && role === "patient" && betterAuthId) {
+        // For patient signup, emit event and let the parent handle navigation
+        window.dispatchEvent(new CustomEvent("auth-success", { 
+          detail: { betterAuthId, email } 
+        }));
+        if (onSignupSuccess) {
+          onSignupSuccess();
+          return;
+        }
+      }
+      
       setTimeout(() => router.push("/"), 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Authentication failed.";
@@ -314,10 +339,14 @@ function AuthFormContent() {
   );
 }
 
-export function AuthForm() {
+interface AuthFormProps {
+  onSignupSuccess?: () => void;
+}
+
+export function AuthForm({ onSignupSuccess }: AuthFormProps) {
   return (
     <Suspense fallback={<div className="mx-auto w-full max-w-md h-96 bg-white/10 rounded-3xl animate-pulse" />}>
-      <AuthFormContent />
+      <AuthFormContent onSignupSuccess={onSignupSuccess} />
     </Suspense>
   );
 }

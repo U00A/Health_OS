@@ -29,7 +29,18 @@ export const updateContactInfo = mutation({
 export const getMyProfile = query({
   args: { betterAuthId: v.string() },
   handler: async (ctx, args) => {
-    const user = await requireRole(ctx, ["patient"], args.betterAuthId);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId))
+      .first();
+
+    if (!user) return null;
+
+    // Only check role if user exists and has a role set
+    if (user.role && user.role !== "patient" && user.role !== "admin") {
+      return null;
+    }
+
     return await ctx.db
       .query("patients")
       .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
@@ -132,5 +143,87 @@ export const seedDemoPatient = mutation({
         allergies: ["Penicillin", "Peanuts"],
       });
     }
+  },
+});
+
+// Self-registration for patients after account creation
+export const selfRegister = mutation({
+  args: {
+    betterAuthId: v.string(),
+    national_id: v.string(),
+    first_name: v.string(),
+    last_name: v.string(),
+    dob: v.string(),
+    sex: v.optional(v.union(v.literal("male"), v.literal("female"))),
+    blood_type: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    wilaya: v.optional(v.string()),
+    commune: v.optional(v.string()),
+    allergies: v.optional(v.array(v.string())),
+    emergency_contact: v.optional(v.string()),
+    existing_conditions: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const { betterAuthId, ...patientData } = args;
+
+    // Find the user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", betterAuthId))
+      .first();
+
+    if (!user) {
+      throw new Error("User account not found. Please sign in first.");
+    }
+
+    // Check if patient already exists
+    const existingPatient = await ctx.db
+      .query("patients")
+      .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
+      .first();
+
+    if (existingPatient) {
+      throw new Error("Patient profile already exists.");
+    }
+
+    // Check duplicate national ID
+    const duplicateNationalId = await ctx.db
+      .query("patients")
+      .withIndex("by_national_id", (q) => q.eq("national_id", args.national_id))
+      .first();
+
+    if (duplicateNationalId) {
+      throw new Error("A patient with this national ID already exists.");
+    }
+
+    // Create patient record
+    const patientId = await ctx.db.insert("patients", {
+      user_id: user._id,
+      ...patientData,
+      allergies: args.allergies || [],
+      enrollment_status: "active",
+    });
+
+    return { patientId, userId: user._id };
+  },
+});
+
+// Check if patient profile exists
+export const checkPatientProfile = query({
+  args: { betterAuthId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_better_auth_id", (q) => q.eq("betterAuthId", args.betterAuthId))
+      .first();
+
+    if (!user) return { exists: false };
+
+    const patient = await ctx.db
+      .query("patients")
+      .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
+      .first();
+
+    return { exists: !!patient, patient };
   },
 });
