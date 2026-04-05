@@ -1,3 +1,4 @@
+// v1.0.1 - Cache-busting deploy for identity stabilization
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireRole, getUser, maskDocumentDoctor } from "./security";
