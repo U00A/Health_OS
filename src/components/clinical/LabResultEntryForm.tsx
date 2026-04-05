@@ -145,7 +145,7 @@ export function LabResultEntryForm({
             </div>
           </div>
           {detectedCriticals.length > 0 && (
-            <Chip size="sm" color="danger" variant="shadow" className="font-black animate-pulse">
+            <Chip size="sm" color="danger" variant="soft" className="font-black animate-pulse">
               CRITICAL
             </Chip>
           )}
